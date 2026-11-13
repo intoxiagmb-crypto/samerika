@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1794568563651,
+      "tag": "0000_mysterious_rick_jones",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1794569032647,
+      "tag": "0001_powerful_vampiro",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1794569162713,
+      "tag": "0002_abnormal_bushwacker",
+      "breakpoints": true
+    }
+  ]
+}
