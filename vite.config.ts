@@ -44,6 +44,15 @@ export default defineConfig(async ({ command }) => {
   const { cloudflare } = await import("@cloudflare/vite-plugin");
 
   return {
+    define: {
+      __SOLARIS_LOCAL_AUTH__: JSON.stringify(command === "serve" && !managedLinux),
+      // Vinext's browser HMR helper reads these optional values directly.
+      // Local previews have no deployment ID; keep Node globals out of the browser.
+      ...(command === "serve" ? {
+        "process.env.__VINEXT_DEPLOYMENT_ID": JSON.stringify(""),
+        "process.env.NEXT_DEPLOYMENT_ID": JSON.stringify(""),
+      } : {}),
+    },
     server: {
       ...(managedLinux
         ? { host: "0.0.0.0", allowedHosts: ["terminal.local"] }

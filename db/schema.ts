@@ -30,3 +30,6 @@ export const settings = sqliteTable('settings', { key: text('key').primaryKey(),
 export const requestLimits = sqliteTable('request_limits', { key: text('key').primaryKey(), count: integer('count').notNull(), expiresAt: integer('expires_at').notNull() });
 
 export const paymentReferences = sqliteTable('payment_references', {reference:text('reference').primaryKey(),recordId:text('record_id').notNull().unique().references(()=>records.id),createdAt:text('created_at').notNull()});
+
+export const localCredentials=sqliteTable('local_credentials',{userId:text('user_id').primaryKey().references(()=>users.id),salt:text('salt').notNull(),passwordHash:text('password_hash').notNull()});
+export const localSessions=sqliteTable('local_sessions',{tokenHash:text('token_hash').primaryKey(),userId:text('user_id').notNull().references(()=>users.id),expiresAt:integer('expires_at').notNull()},t=>[index('local_sessions_expiry').on(t.expiresAt)]);

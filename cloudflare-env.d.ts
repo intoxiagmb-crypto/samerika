@@ -4,3 +4,5 @@ declare namespace Cloudflare {
     BUCKET?: R2Bucket;
   }
 }
+
+declare const __SOLARIS_LOCAL_AUTH__: boolean;

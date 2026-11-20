@@ -1,13 +1,13 @@
 import { readLimitedBody } from '@/lib/request-body';
 import { env } from 'cloudflare:workers';
-import { getChatGPTUser } from '../../chatgpt-auth';
+import { getPortalIdentity } from '@/lib/portal-auth';
 import { Business, errorResponse } from '@/lib/business.mjs';
 export const dynamic='force-dynamic';
-export async function GET(req:Request){try{if(!env.DB||!env.BUCKET)throw new Error('Storage unavailable');const s=new Business(env.DB);const u=await s.user(await getChatGPTUser());const r=await s.fileAccess(u,new URL(req.url).searchParams.get('id'));const file=await env.BUCKET.get(r.data.fileKey);if(!file)return Response.json({error:'File not found.'},{status:404});return new Response(file.body,{headers:{'Content-Type':r.data.mime,'Content-Disposition':`attachment; filename="${r.data.name.replace(/[^a-zA-Z0-9._-]/g,'_')}"`,'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'}});}catch(e){const r=errorResponse(e);return Response.json(r,{status:r.status});}}
+export async function GET(req:Request){try{if(!env.DB||!env.BUCKET)throw new Error('Storage unavailable');const s=new Business(env.DB);const u=await s.user(await getPortalIdentity());const r=await s.fileAccess(u,new URL(req.url).searchParams.get('id'));const file=await env.BUCKET.get(r.data.fileKey);if(!file)return Response.json({error:'File not found.'},{status:404});return new Response(file.body,{headers:{'Content-Type':r.data.mime,'Content-Disposition':`attachment; filename="${r.data.name.replace(/[^a-zA-Z0-9._-]/g,'_')}"`,'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'}});}catch(e){const r=errorResponse(e);return Response.json(r,{status:r.status});}}
 export async function POST(req:Request){try{
  if(req.headers.get('origin')!==new URL(req.url).origin)return Response.json({error:'Request origin is not permitted.'},{status:403});
  if(Number(req.headers.get('content-length'))>6*1024*1024)return Response.json({error:'Maximum file size is 5 MB.'},{status:413});
- if(!env.DB||!env.BUCKET)throw new Error('Storage unavailable');const s=new Business(env.DB);const u=await s.user(await getChatGPTUser());await s.limit(u.id);
+ if(!env.DB||!env.BUCKET)throw new Error('Storage unavailable');const s=new Business(env.DB);const u=await s.user(await getPortalIdentity());await s.limit(u.id);
  const bytesBody=await readLimitedBody(req,6*1024*1024);const boundedRequest=new Request(req.url,{method:'POST',headers:req.headers,body:bytesBody as BodyInit});const form=await boundedRequest.formData();const file=form.get('file');const projectId=String(form.get('projectId')||'');if(projectId)await s.access(u,projectId);else if(form.get('documentType')!=='Partner KYC'||u.role!=='PARTNER')return Response.json({error:'Select an authorized project.'},{status:403});
  if(!(file instanceof File)||file.size===0||file.size>5*1024*1024)return Response.json({error:'Choose a PDF, JPEG or PNG under 5 MB.'},{status:400});
  const bytes=new Uint8Array(await file.arrayBuffer());const hex=[...bytes.slice(0,8)].map(b=>b.toString(16).padStart(2,'0')).join('');

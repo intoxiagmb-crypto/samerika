@@ -1,4 +1,8 @@
-import { requireChatGPTUser } from '../chatgpt-auth';
+import { redirect } from 'next/navigation';
+import { getPortalIdentity,localPortalAuth } from '@/lib/portal-auth';
 import Portal from './portal';
 export const dynamic='force-dynamic';
-export default async function PortalPage({searchParams}:{searchParams:Promise<Record<string,string|string[]|undefined>>}){const params=await searchParams;const query=new URLSearchParams();for(const key of ['view','new','join','type']){const value=params[key];if(typeof value==='string')query.set(key,value);}await requireChatGPTUser('/portal'+(query.size?'?'+query.toString():''));return <Portal/>}
+export default async function PortalPage(){
+ if(!await getPortalIdentity())redirect('/login');
+ return <Portal localDemo={localPortalAuth()}/>;
+}

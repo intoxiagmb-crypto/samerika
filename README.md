@@ -1,6 +1,8 @@
 # Solaris — Solar Business Platform
 
-A responsive solar company website and connected operations workspace, visually inspired by the supplied Pinterest reference: deep navy, soft cyan, serif display typography and a large Earth image.
+A responsive solar company website and connected operations workspace with cool-grey surfaces, cobalt-blue navigation, white rounded cards, readable forms, an original solar-home illustration and separate agent/company sign-in pages.
+
+The current dashboard adapts the [supplied Pinterest reference](https://www.pinterest.com/pin/1132022056371365656/): a split blue sidebar, welcome card, vertical project-stage chart, installation progress rings and a right-hand schedule/update column. Charts use role-scoped stored records; progress percentages measure completed installation steps. The original reference image is not redistributed.
 
 ## What works
 
@@ -15,7 +17,7 @@ A responsive solar company website and connected operations workspace, visually 
 - Configurable per-kW incentives captured with their rule snapshot, admin approval, finance payout records, failed-payment retry and verified payment evidence.
 - Unique payout per incentive and unique payment reference for paid payouts. Paid records cannot be overwritten.
 - Customer collection recording with uploaded evidence, support tickets and replies, in-app project notifications, audit history and role-scoped CSV exports.
-- Live dashboard totals from stored records. There are no fabricated production metrics or seeded business records.
+- Live dashboard totals from stored records. Local demo fixtures are clearly labeled; dashboard totals are calculated from the records visible to the signed-in role.
 
 ## Stack and storage
 
@@ -23,7 +25,7 @@ React 19, TypeScript, Next-compatible Vinext, Vite, Lucide, Zod, Drizzle schema/
 
 D1 contains users, leads, projects, typed operational records, payment-reference reservations, settings, notifications, rate limits and audit events. Operational documents such as survey reports and quotation snapshots have validated extensible JSON payloads. It is not the fully decomposed 40-entity schema described in the master brief.
 
-Authentication is provided by Sites/ChatGPT sign-in, rather than a custom password/OTP implementation. Sites supplies the authenticated identity headers; a direct deployment of the Worker without that trusted gateway is unsupported.
+Hosted authentication is provided by Sites/ChatGPT sign-in. Portable development uses the explicit local credential/session flow described below. The local flow is disabled in production builds. Sites supplies hosted identity headers; a direct deployment without that trusted gateway remains unsupported.
 
 ## First use
 
@@ -37,25 +39,26 @@ Authentication is provided by Sites/ChatGPT sign-in, rather than a custom passwo
 
 Changing Site sharing is a separate explicit action. This repository does not broaden the private site's audience. Customers and partners must be allowed by Site access policy before they can sign in.
 
-## Local development
+## Local development and demo accounts
 
-Requires Node 22.13+ (tested on 22.15) and npm.
+Requires Node 22.13+ and npm. The review instance runs at `http://127.0.0.1:5175/`.
 
 ```sh
 npm ci
-npm run build
+npm run dev -- --host 127.0.0.1 --port 5175
+# In a second terminal, after the local database is initialized:
+npm run demo:setup
 ```
 
-Apply each `drizzle/*.sql` migration once, in order, to the local database. For example:
+- Agent sign-in: `/login/agent`; company sign-in: `/login/company`; chooser: `/login`.
+- Setup generates distinct random passwords once, stored in ignored `.sites-runtime/demo-credentials.json` with owner-only file permissions. The demo identities are `agent@solaris.demo` and `company@solaris.demo`.
+- Running setup again preserves passwords, existing company configuration and existing records. It adds only missing demo identities/fixtures. It accesses only the checkout’s local SQLite database, never a remote service.
+- Example leads, surveyed/quoted/installation-stage projects, a kit and staff profiles let you explore the workflow immediately. Sample figures and quotations are not commercial offers. Staff fixture profiles do not have passwords.
+- Agent requirements persist in local D1 and appear in the company’s lead list. Company updates flow back to the referring agent. Private uploads use local R2.
+- The server checks account role at sign-in, uses salted scrypt password hashes (`N=16384, r=8, p=5`) and stores only hashes of random session tokens. Cookies are HttpOnly and SameSite=Lax (Secure on HTTPS); sessions expire after 12 hours. Sign-in rotates the existing session, logout invalidates it, suspended users lose access, and failed attempts are rate limited.
+- Password demo login is compiled on only for portable `serve` mode. Production builds continue using the existing Sites identity. Do not publish demo credentials or seed fixtures to a hosted database.
 
-```sh
-node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_mysterious_rick_jones.sql
-node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0001_powerful_vampiro.sql
-node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0002_abnormal_bushwacker.sql
-npm run dev -- --host 127.0.0.1 --port 5186
-```
-
-The maintained development plugin provides one loopback-only local test identity through its sign-in route. That mock is absent in production. Local D1/R2 data is ignored by Git and never included in deployment archives.
+The new local auth tables are in migration `0003_local_portal_auth.sql`. Existing hosted migration and identity behavior are otherwise preserved. All local state is ignored by Git.
 
 ## Verification
 
@@ -65,17 +68,17 @@ npm run typecheck
 npm run build
 ```
 
-Fourteen service/database tests use real SQLite transactions and the same business service as the deployed APIs. They cover the complete multi-role referral-to-payout lifecycle, KYC, cross-account access denial, duplicate leads/incentives/payouts, quote arithmetic and snapshots, failed inspection, rejected documents, project cancellation/delay, stale writes, cash/finance rules, payment evidence, rate limiting and file permissions.
+Nineteen authentication and service/database tests use real SQLite transactions and the same business service as the deployed APIs. They cover the complete multi-role referral-to-payout lifecycle, KYC, cross-account access denial, duplicate leads/incentives/payouts, quote arithmetic and snapshots, failed inspection, rejected documents, project cancellation/delay, stale writes, cash/finance rules, payment evidence, rate limiting and file permissions.
 
-With the local server running:
+With the local server running and demo setup complete:
 
 ```sh
-node tests/http-smoke.mjs
+npm run test:http
 ```
 
-This intentionally creates local-only fixtures. It verifies the public page response, sign-in, unauthenticated access, CSRF rejection, real lead/project persistence, private R2 upload/download and malformed JSON errors. It refuses non-local targets.
+This intentionally creates local-only fixtures. It verifies public/login pages, protected redirects, both role-specific sign-ins, wrong passwords/portal selection, CSRF rejection, agent/company isolation, persisted lead-to-project handoff, private R2 upload/download, malformed JSON errors and session revocation. It refuses non-local targets.
 
-Browser visual and interaction QA could not be executed in this session because the browser automation host was unavailable. Responsive layouts, reduced motion, keyboard dialog handling, empty/error/loading states and print styles are implemented, but should be visually reviewed before a commercial launch.
+Desktop visual and interaction QA completed in native Chrome: the company login and dashboard, agent login/dashboard, and customer-requirement dialog were inspected. The browser-extension host was unavailable, so native app automation was used. Responsive breakpoints are implemented; a dedicated mobile-device visual review is still outstanding. TypeScript, production build and authenticated local page checks pass.
 
 ## Remaining work from the enterprise master brief
 
@@ -93,6 +96,8 @@ This is a working initial implementation, **not a claim that the entire enterpri
 
 ## Assets and publication
 
-Earth imagery: NASA/JPL, image `PIA18033`, obtained from https://images-assets.nasa.gov/image/PIA18033/PIA18033~orig.jpg and resized to WebP. The Pinterest screenshot is a design reference only and is not redistributed. Fonts: DM Sans and Manrope via Google Fonts with system fallbacks. Icons: Lucide.
+Current artwork: original code-native solar-home SVG in `components/solar-scene.tsx`. The legacy Earth asset is retained but unused. Fonts: DM Sans and Manrope via Google Fonts with system fallbacks. Icons: Lucide.
+
+Design research: [Aurora solar sales workflow](https://docs.aurorasolar.com/reference/common-workflows) informed the enquiry-to-survey-to-quotation flow; [OWASP session management](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html) and [password storage](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html) informed local sign-in and session handling.
 
 `.openai/hosting.json` binds this source to its existing private Site, D1 and R2. Keep that project ID when making future edits. Publish through the Sites source/build/version workflow. All hosted database migrations are applied by Sites; do not run local test fixtures against production.
