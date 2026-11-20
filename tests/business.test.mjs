@@ -1,25 +1,14 @@
-import test from 'node:test';
+import test,{after} from 'node:test';
 import assert from 'node:assert/strict';
-import { DatabaseSync } from 'node:sqlite';
-import { readFileSync,readdirSync } from 'node:fs';
+import {createClient} from '@libsql/client';
+import {adaptDatabase} from '../lib/database.mjs';
+import {migrate} from '../lib/migrations.mjs';
 import { Business } from '../lib/business.mjs';
 import { DEFAULT_SETTINGS,quoteTotal } from '../lib/policy.mjs';
-class D1Adapter {
- constructor(){this.sqlite=new DatabaseSync(':memory:');this.sqlite.exec('PRAGMA foreign_keys=ON');for(const f of readdirSync(new URL('../drizzle/',import.meta.url)).filter(f=>f.endsWith('.sql')).sort())this.sqlite.exec(readFileSync(new URL('../drizzle/'+f,import.meta.url),'utf8'));}
- prepare(sql){
-  const db=this;
-  return {bind(...args){
-   return {
-    async first(){return db.sqlite.prepare(sql).get(...args)||null;},
-    async all(){return {results:db.sqlite.prepare(sql).all(...args)};},
-    async run(){const r=db.sqlite.prepare(sql).run(...args);return {meta:{changes:Number(r.changes)}};}
-   };
-  }};
- }
-
- async batch(statements){this.sqlite.exec('BEGIN');try{const result=[];for(const s of statements)result.push(await s.run());this.sqlite.exec('COMMIT');return result;}catch(e){this.sqlite.exec('ROLLBACK');throw e;}}
-}
-async function setup(){const db=new D1Adapter(),s=new Business(db);const users={};for(const role of ['ADMIN','PARTNER','SALES','CUSTOMER','MANAGER','TECHNICAL','VERIFIER','FINANCE']){const identity={userId:role.toLowerCase(),email:`${role.toLowerCase()}@example.test`,displayName:role};let u=await s.user(identity,role==='PARTNER'?'PARTNER':undefined);if(role!=='ADMIN'){if(role==='PARTNER'){const kyc=await s.upload(u,{projectId:'',documentType:'Partner KYC',name:'business.pdf',mime:'application/pdf',size:100,key:'kyc-test'});await s.act(users.ADMIN,'record.update',{id:kyc,status:'Verified',note:'Business verified'});}await s.act(users.ADMIN,'user.update',{id:u.id,role,status:'Active'});u=await s.user(identity);}users[role]=u;}return {db,s,u:users};}
+const clients=[];
+after(()=>{for(const client of clients)client.close();});
+async function database(){const client=createClient({url:':memory:'});clients.push(client);await migrate(client);return adaptDatabase(client);}
+async function setup(){const db=await database(),s=new Business(db);const users={};for(const role of ['ADMIN','PARTNER','SALES','CUSTOMER','MANAGER','TECHNICAL','VERIFIER','FINANCE']){const identity={userId:role.toLowerCase(),email:`${role.toLowerCase()}@example.test`,displayName:role};let u=await s.user(identity,role==='PARTNER'?'PARTNER':undefined);if(role!=='ADMIN'){if(role==='PARTNER'){const kyc=await s.upload(u,{projectId:'',documentType:'Partner KYC',name:'business.pdf',mime:'application/pdf',size:100,key:'kyc-test'});await s.act(users.ADMIN,'record.update',{id:kyc,status:'Verified',note:'Business verified'});}await s.act(users.ADMIN,'user.update',{id:u.id,role,status:'Active'});u=await s.user(identity);}users[role]=u;}return {db,s,u:users};}
 const lead={name:'Test Customer',email:'customer@example.test',mobile:'9876543210',address:'12 Test Lane',city:'Jaipur',state:'Rajasthan',pin:'302001',capacity:3,system:'On-grid',property:'Residential',finance:'Finance',remarks:'Test installation'};
 async function createProject(s,u){const leadId=await s.act(u.PARTNER,'lead.create',lead);await s.act(u.ADMIN,'lead.update',{id:leadId,status:'Assigned',assignedTo:u.SALES.id});await s.act(u.SALES,'lead.update',{id:leadId,status:'Contacted',note:'Confirmed interest',followUp:'2099-01-01'});const projectId=await s.act(u.SALES,'project.create',{leadId});await s.act(u.ADMIN,'project.update',{id:projectId,assignment:{managerId:u.MANAGER.id,technicianId:u.TECHNICAL.id,verifierId:u.VERIFIER.id}});return {leadId,projectId};}
 async function completeProject(s,u,projectId){

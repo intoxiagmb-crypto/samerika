@@ -43,3 +43,8 @@ yarn-error.log*
 
 # OS metadata
 .DS_Store
+
+# Local Next.js development data and Vercel link state
+/.solaris/
+/.vercel/
+!.env.example

@@ -1,8 +1,10 @@
-import { env } from 'cloudflare:workers';
-import { localPortalAuth } from '@/lib/portal-auth';
+import { isSameOrigin, secureCookie } from '@/lib/request-origin.mjs';
+import { getDatabase } from '@/lib/database.mjs';
 import { logout,readSessionCookie,SESSION_COOKIE } from '@/lib/local-auth.mjs';
+export const runtime = 'nodejs';
 export async function POST(req:Request){
- if(req.headers.get('origin')!==new URL(req.url).origin)return new Response('Forbidden',{status:403});
- if(localPortalAuth()&&env.DB)await logout(env.DB,readSessionCookie(req.headers.get('cookie')||''));
- return Response.json({ok:true,redirect:localPortalAuth()?'/login':'/signout-with-chatgpt?return_to=%2Flogin'},{headers:{'Cache-Control':'no-store','Set-Cookie':`${SESSION_COOKIE}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0`}});
+ if(!isSameOrigin(req))return new Response('Forbidden',{status:403});
+ const token=readSessionCookie(req.headers.get('cookie')||'');
+ if(token)await logout(getDatabase(),token);
+ return Response.json({ok:true,redirect:'/login'},{headers:{'Cache-Control':'no-store','Set-Cookie':`${SESSION_COOKIE}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0${secureCookie(req)?'; Secure':''}`}});
 }

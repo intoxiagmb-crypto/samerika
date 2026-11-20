@@ -7,7 +7,7 @@ The current dashboard adapts the [supplied Pinterest reference](https://www.pint
 ## What works
 
 - Public solar solutions, installation process, partner programme and FAQ pages.
-- Platform-managed sign-in and eight server-enforced business roles: administrator, customer, partner, sales, relationship manager, technician, document reviewer and finance.
+- Password/session sign-in and eight server-enforced business roles: administrator, customer, partner, sales, relationship manager, technician, document reviewer and finance.
 - Partner applications, private KYC uploads, KYC review and account approval.
 - Database-backed enquiries, mobile/email duplicate protection, original partner attribution, sales assignment, call notes and follow-up dates.
 - Lead conversion into unique projects with assigned managers, technicians and reviewers.
@@ -19,66 +19,56 @@ The current dashboard adapts the [supplied Pinterest reference](https://www.pint
 - Customer collection recording with uploaded evidence, support tickets and replies, in-app project notifications, audit history and role-scoped CSV exports.
 - Live dashboard totals from stored records. Local demo fixtures are clearly labeled; dashboard totals are calculated from the records visible to the signed-in role.
 
-## Stack and storage
+## Vercel deployment
 
-React 19, TypeScript, Next-compatible Vinext, Vite, Lucide, Zod, Drizzle schema/migrations, Cloudflare D1 and private R2 storage. This implementation uses the supported Sites Worker deployment environment; it does **not** use the suggested PostgreSQL/Prisma stack. Server business rules are centralized in `lib/business.mjs`. API routes adapt authenticated requests to that service.
+This project now uses **Next.js on Node 22**, **Turso libSQL** for persistent SQLite data, and a **private Vercel Blob store** for documents. The former Vinext build produced Worker output instead of `.next/routes-manifest.json`; `npm run build` now invokes `next build --webpack`, and `vercel.json` selects the Next.js framework and `.next` output.
 
-D1 contains users, leads, projects, typed operational records, payment-reference reservations, settings, notifications, rate limits and audit events. Operational documents such as survey reports and quotation snapshots have validated extensible JSON payloads. It is not the fully decomposed 40-entity schema described in the master brief.
+1. In Vercel, import `intoxiagmb-crypto/samerika`, branch `main`, with this repository root as the root directory. Use the Next.js preset, `npm run build`, `.next`, and Node 22.x. Remove any old dashboard override pointing to Vinext or `dist`.
+2. Create/connect a **Turso libSQL database** and a **private** Vercel Blob store. Set `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, and `BLOB_READ_WRITE_TOKEN` in the Vercel project's Production environment. Use separate database and storage resources for Preview deployments. These are server secrets; never use `NEXT_PUBLIC_` names.
+3. Copy `.env.example` to ignored `.env.local` locally and enter the same database credentials securely. Run `npm ci`, then `npm run db:migrate` once against the intended database. Migrations run in a transaction and record checksums; repeat runs skip completed migrations. The build does not modify databases.
+4. Run `npm run admin:create` in an interactive local terminal using those database credentials. It prompts for the owner's name, email and a password of at least 12 characters (hidden input). It refuses to create a second bootstrap administrator. There is no public first-visitor administrator registration.
+5. Deploy/redeploy the `main` commit. Sign in at `/login/company`. Under **People & partners**, choose **Create account** to add staff, customers and agents. Share credentials privately. **Reset password** revokes all existing sessions for that account. Pending partner accounts can sign in and submit KYC; they cannot create leads until the administrator verifies KYC and activates them.
+6. Configure company details, documents, catalogue and incentive rates in the dashboard before using real business records.
 
-Hosted authentication is provided by Sites/ChatGPT sign-in. Portable development uses the explicit local credential/session flow described below. The local flow is disabled in production builds. Sites supplies hosted identity headers; a direct deployment without that trusted gateway remains unsupported.
+The build works without production secrets. Live sign-in and database operations require a migrated Turso database; uploads require a private Blob store. Vercel never falls back to a temporary local database or local uploaded files. No remote resources, credentials, migrations or live deployment are created merely by building or pushing the source.
 
-## First use
+Server uploads accept PDF, JPEG or PNG up to **4 MB**, leaving room for multipart overhead under Vercel's 4.5 MB function request limit. Files are read through an authenticated endpoint after project/owner permission checks. Blob objects are private; MIME signatures are checked before upload. The UI shows the same size limit.
 
-1. Open the private published site and choose **Open portal**. The first authenticated visitor initializes the administrator account. New Sites are owner-private; **finish this bootstrap before changing the site audience**.
-2. Configure company details, contact details, tax, required documents and the incentive rate in **Settings**. Defaults of zero do not represent a commercial offer.
-3. Add approved kits and prices in **Products & kits**.
-4. Other users sign in as customers. A customer can apply through **Become a partner**. They upload the administrator-requested business verification document; the admin reviews it in **People & partners**, then activates the partner.
-5. Assign staff roles in **People & partners** and assign leads/projects to the appropriate people. Staff cannot self-assign a privileged role.
-6. Follow the enquiry → survey → quotation → documents → approvals → installation → quality → handover → completion workflow. Configure required approval types on the project; finance projects retain bank approval.
-7. Calculate and approve the eligible incentive. Finance creates a payout and records payment evidence and a reference after an actual external payment has been verified.
+Existing Cloudflare D1/R2 data is not automatically copied. This migration preserves the SQL schema and role/business rules, but an existing populated database or bucket requires a separate controlled data transfer. Do not point the initial schema migrations at an imported populated database without baselining its migration history. The previous `.openai/hosting.json` identity and legacy build helpers remain archived in the repository; Vercel does not use them or ChatGPT authentication headers.
 
-Changing Site sharing is a separate explicit action. This repository does not broaden the private site's audience. Customers and partners must be allowed by Site access policy before they can sign in.
+## Local development
 
-## Local development and demo accounts
-
-Requires Node 22.13+ and npm. The review instance runs at `http://127.0.0.1:5175/`.
+Requires Node 22.13+ (22.x). With remote service variables unset:
 
 ```sh
 npm ci
-npm run dev -- --host 127.0.0.1 --port 5175
-# In a second terminal, after the local database is initialized:
 npm run demo:setup
+npm run dev
 ```
 
-- Agent sign-in: `/login/agent`; company sign-in: `/login/company`; chooser: `/login`.
-- Setup generates distinct random passwords once, stored in ignored `.sites-runtime/demo-credentials.json` with owner-only file permissions. The demo identities are `agent@solaris.demo` and `company@solaris.demo`.
-- Running setup again preserves passwords, existing company configuration and existing records. It adds only missing demo identities/fixtures. It accesses only the checkout’s local SQLite database, never a remote service.
-- Example leads, surveyed/quoted/installation-stage projects, a kit and staff profiles let you explore the workflow immediately. Sample figures and quotations are not commercial offers. Staff fixture profiles do not have passwords.
-- Agent requirements persist in local D1 and appear in the company’s lead list. Company updates flow back to the referring agent. Private uploads use local R2.
-- The server checks account role at sign-in, uses salted scrypt password hashes (`N=16384, r=8, p=5`) and stores only hashes of random session tokens. Cookies are HttpOnly and SameSite=Lax (Secure on HTTPS); sessions expire after 12 hours. Sign-in rotates the existing session, logout invalidates it, suspended users lose access, and failed attempts are rate limited.
-- Password demo login is compiled on only for portable `serve` mode. Production builds continue using the existing Sites identity. Do not publish demo credentials or seed fixtures to a hosted database.
+Open `http://127.0.0.1:5175`. Agent sign-in is `/login/agent`, company sign-in is `/login/company`, and customer sign-in is `/login/customer`.
 
-The new local auth tables are in migration `0003_local_portal_auth.sql`. Existing hosted migration and identity behavior are otherwise preserved. All local state is ignored by Git.
+Local development stores SQLite in ignored `.solaris/local.db` and private files in `.solaris/files`. Demo setup creates three local accounts with distinct random passwords in ignored `.solaris/demo-credentials.json` (owner-only permissions), preserves existing accounts and refuses to run with remote database/storage credentials. It does not create production users or overwrite the old local Cloudflare state.
+
+For an empty local workspace without demo accounts, run `npm run db:migrate`, then `npm run admin:create`.
+
+Passwords use salted scrypt hashes. Sessions use hashed random tokens, HttpOnly and SameSite=Lax cookies (Secure on HTTPS), a 12-hour expiry, rotation at login and revocation on logout/password reset. Suspended users lose access. Sign-in attempts are rate limited in the database. Incoming ChatGPT identity headers are not trusted for authentication.
 
 ## Verification
 
 ```sh
 npm test
-npm run typecheck
 npm run build
-```
-
-Nineteen authentication and service/database tests use real SQLite transactions and the same business service as the deployed APIs. They cover the complete multi-role referral-to-payout lifecycle, KYC, cross-account access denial, duplicate leads/incentives/payouts, quote arithmetic and snapshots, failed inspection, rejected documents, project cancellation/delay, stale writes, cash/finance rules, payment evidence, rate limiting and file permissions.
-
-With the local server running and demo setup complete:
-
-```sh
+npm run typecheck
+npm run demo:setup
+# Start a local production server, then run HTTP checks in a second terminal:
+SOLARIS_LOCAL_DATA=1 npm start -- --hostname 127.0.0.1 --port 5175
 npm run test:http
 ```
 
-This intentionally creates local-only fixtures. It verifies public/login pages, protected redirects, both role-specific sign-ins, wrong passwords/portal selection, CSRF rejection, agent/company isolation, persisted lead-to-project handoff, private R2 upload/download, malformed JSON errors and session revocation. It refuses non-local targets.
+`SOLARIS_LOCAL_DATA=1` is an explicit local production-test override; it has no effect on Vercel. Never set remote service credentials when running demo or HTTP fixture tests. HTTP tests refuse non-loopback URLs and create local records.
 
-Desktop visual and interaction QA completed in native Chrome: the company login and dashboard, agent login/dashboard, and customer-requirement dialog were inspected. The browser-extension host was unavailable, so native app automation was used. Responsive breakpoints are implemented; a dedicated mobile-device visual review is still outstanding. TypeScript, production build and authenticated local page checks pass.
+The business lifecycle suite runs against the production libSQL adapter, including atomic batches, quote arithmetic, KYC, cross-account permissions, project completion and payment evidence. Additional tests cover repeatable migrations, rollback, hosted configuration guards, account provisioning, password reset/session revocation and private file storage. HTTP checks cover public/login pages, all three sign-ins, forged identity headers, CSRF, account escalation, lead/project handoff, MIME validation, private downloads and logout.
 
 ## Remaining work from the enterprise master brief
 
@@ -100,4 +90,4 @@ Current artwork: original code-native solar-home SVG in `components/solar-scene.
 
 Design research: [Aurora solar sales workflow](https://docs.aurorasolar.com/reference/common-workflows) informed the enquiry-to-survey-to-quotation flow; [OWASP session management](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html) and [password storage](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html) informed local sign-in and session handling.
 
-`.openai/hosting.json` binds this source to its existing private Site, D1 and R2. Keep that project ID when making future edits. Publish through the Sites source/build/version workflow. All hosted database migrations are applied by Sites; do not run local test fixtures against production.
+GitHub pushes trigger Vercel builds when the repository is connected. Production database migrations and account bootstrap are explicit operator steps, never demo seeding during deployment.
