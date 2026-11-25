@@ -8,6 +8,7 @@ import SolarPlanner from '@/components/solar-planner';
 import { ArrowRight, ArrowUpRight, Building2, Check, CheckCircle2, ClipboardCheck, FileText, House, Leaf, MessageCircle, Minus, PanelsTopLeft, Plus, ShieldCheck, Sun, Users, Clock3, Headphones, BriefcaseBusiness } from 'lucide-react';
 import './home.css';
 import './home-subsidy.css';
+import './home-highlights.css';
 
 const offerings = [
   { title: 'Homes', icon: House, property: 'Residential', description: 'Make room for clean energy on the roof you already have.', note: 'For your everyday energy', className: 'home', category: 'Residential', features: ['Rooftop assessment', 'Personalised quotation'], cta: 'Explore home solar' },
@@ -46,6 +47,17 @@ export default function HomePage() {
       <div className="sh-hero-shade"/>
       <div className="sh-hero-content"><span className="sh-eyebrow"><span/> SOLAR POWER. EVERYDAY POSSIBILITIES.</span><h1 id="home-title">A brighter future.<br/>Starts on <span>your roof.</span></h1><p>Make your move to solar with a team that connects every step—from your first enquiry to installation.</p><div className="sh-hero-actions"><Link href="/enquiry" className="sh-button sh-primary">Let’s talk solar <ArrowRight size={19}/></Link><a href="#solutions" className="sh-hero-link">Explore our solutions <ArrowUpRight size={18}/></a></div><div className="sh-hero-promise"><ShieldCheck size={19}/><span>Your rooftop. Your requirements. A plan built around you.</span></div></div>
       <div className="sh-hero-bottom"><span><ClipboardCheck size={19}/> Site-led planning</span><span><FileText size={19}/> Clear quotations</span><span><CheckCircle2 size={19}/> Connected project tracking</span></div>
+    </section>
+
+    <section className="sh-highlights" id="solar-highlights" aria-labelledby="highlights-heading">
+      <h2 id="highlights-heading">Powering more homes <span>with solar.</span></h2>
+      <div className="sh-highlights-grid">
+        <article className="sh-highlight-card sh-highlight-count"><House size={32} strokeWidth={1.8} aria-hidden="true"/><h3>500<span>+</span></h3><p>Homes Solarized</p></article>
+        <article className="sh-highlight-card"><Sun size={32} strokeWidth={1.8} aria-hidden="true"/><h3>Rooftop solar</h3><p>For homes & businesses</p></article>
+        <article className="sh-highlight-card"><FileText size={32} strokeWidth={1.8} aria-hidden="true"/><h3>Subsidy guidance</h3><p>PM Surya Ghar support</p></article>
+        <article className="sh-highlight-card"><Headphones size={32} strokeWidth={1.8} aria-hidden="true"/><h3>Connected support</h3><p>From enquiry to handover</p></article>
+      </div>
+      <div className="sh-highlights-cta"><div><Leaf size={31} strokeWidth={1.7} aria-hidden="true"/><p>Your rooftop could be next.<br/><strong>Let’s plan your move to solar.</strong></p></div><Link href="/enquiry" className="sh-button sh-dark">Unlock your solar savings</Link></div>
     </section>
 
     <section className="sh-subsidy" id="solar-subsidy" aria-labelledby="subsidy-heading">
