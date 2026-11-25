@@ -18,6 +18,8 @@ The dashboard combines the supplied mobile layout reference with the Samerika lo
 - Unique payout per incentive and unique payment reference for paid payouts. Paid records cannot be overwritten.
 - Customer collection recording with uploaded evidence, support tickets and replies, in-app project notifications, audit history and role-scoped CSV exports.
 - Live dashboard totals from stored records. Local demo fixtures are clearly labeled; dashboard totals are calculated from the records visible to the signed-in role.
+- Application tracking uses nine bilingual workflow stages: Site Survey, Quotation, Order Confirmation, Customer Registration, Installation, DCR Registration, Net Metering, Subsidy Application and Subsidy Received. Each stage supports Pending, In Progress, Completed and Hold / Rejected, with a required status date, server-recorded employee identity, reference, comment and retained update history. Complete earlier stages before progressing; a hold requires a reason. All nine completed stages show the workflow's Project Completed badge without overriding the separate installation/payment completion checks.
+- Earlier ten-stage application records remain available under **Earlier application records**. They are preserved when a project is first updated using the new workflow, with no automatic inference that the new milestones are complete. No database schema migration is needed.
 
 ## Vercel deployment
 

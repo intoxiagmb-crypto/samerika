@@ -32,8 +32,8 @@ const project=await action('company','project.create',{leadId:lead.id});assert.o
 await action('agent','project.update',{id:project.id,status:'Completed'},403);
 const trackProject=(await snapshot('staff')).projects.find(p=>p.id===project.id);assert.ok(trackProject);
 await action('agent','project.tracking',{id:project.id,version:trackProject.version,applicationNumber:'NO-ACCESS'},403);
-await action('staff','project.tracking',{id:project.id,version:trackProject.version,applicationNumber:'APP-'+tag,stepId:'registration',status:'Completed',eventDate:'2026-01-01',reference:'HTTP-ACK-'+tag});
-assert.equal((await snapshot('agent')).projects.find(p=>p.id===project.id).data.tracking.steps.registration.status,'Completed');
+await action('staff','project.tracking',{id:project.id,version:trackProject.version,applicationNumber:'APP-'+tag,stepId:'site_survey',status:'Completed',eventDate:'2026-01-01',reference:'HTTP-ACK-'+tag});
+assert.equal((await snapshot('agent')).projects.find(p=>p.id===project.id).data.tracking.steps.site_survey.status,'Completed');
 await action('staff','project.tracking',{id:project.id,version:trackProject.version,applicationNumber:'STALE'},409);
 
 const companyLead=await action('company','lead.create',{name:'Demo · Company-only requirement',mobile:'8'+tag.slice(-9),email:`private-${tag}@solaris.demo`,address:'Demo company-only site',city:'Jaipur',state:'Rajasthan',pin:'302001',capacity:3,system:'On-grid',property:'Residential',finance:'Cash',remarks:'Local role-isolation verification fixture'});

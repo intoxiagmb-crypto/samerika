@@ -140,11 +140,11 @@ test('suspended staff receive no enquiry and old unassigned website leads reach 
 test('application tracking persists staff updates, protects roles and rejects stale changes',async()=>{
  const {s,u}=await setup();const {projectId}=await createProject(s,u);
  let p=await s.one('SELECT * FROM projects WHERE id=?',projectId);
- const patch={id:projectId,version:p.version,stepId:'registration',status:'Completed',eventDate:'2026-01-01',reference:'REG-ACK-TEST',applicationNumber:'APP-TEST-001'};
+ const patch={id:projectId,version:p.version,stepId:'site_survey',status:'Completed',eventDate:'2026-01-01',reference:'REG-ACK-TEST',applicationNumber:'APP-TEST-001'};
  for(const role of ['PARTNER','CUSTOMER','TECHNICAL','VERIFIER','FINANCE'])await assert.rejects(s.act(u[role],'project.tracking',patch),e=>e.status===403);
  await s.act(u.SALES,'project.tracking',patch);
  p=await s.one('SELECT * FROM projects WHERE id=?',projectId);
- assert.equal(p.data.tracking.applicationNumber,'APP-TEST-001');assert.equal(p.data.tracking.steps.registration.status,'Completed');
+ assert.equal(p.data.tracking.applicationNumber,'APP-TEST-001');assert.equal(p.data.tracking.steps.site_survey.status,'Completed');
  assert.equal(p.status,'Survey','Tracking does not override verified project completion');
  assert.ok(p.data.phases.every(phase=>phase.status==='Pending'));
  for(const role of ['ADMIN','PARTNER','CUSTOMER','SALES','MANAGER'])assert.equal((await s.snapshot(u[role])).projects.find(row=>row.id===projectId).data.tracking.applicationNumber,'APP-TEST-001');
@@ -153,8 +153,16 @@ test('application tracking persists staff updates, protects roles and rejects st
  const other=await s.user({userId:'other-sales',email:'other-sales@example.test',displayName:'Other sales'});
  await s.act(u.ADMIN,'user.update',{id:other.id,role:'SALES',status:'Active'});
  await assert.rejects(s.act({...other,role:'SALES'},'project.tracking',{...patch,version:p.version}),e=>e.status===403);
- await s.act(u.MANAGER,'project.tracking',{id:projectId,version:p.version,stepId:'application',status:'In Progress',eventDate:'2026-01-02',note:'Application submitted'});
+ await s.act(u.MANAGER,'project.tracking',{id:projectId,version:p.version,stepId:'quotation',status:'In Progress',eventDate:'2026-01-02',note:'Application submitted'});
  p=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ await s.act(u.MANAGER,'project.tracking',{id:projectId,version:p.version,stepId:'quotation',status:'Hold / Rejected',eventDate:'2026-01-03',note:'Customer requested revised pricing',updatedBy:'Forged name',updatedById:'forged'});
+ p=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ assert.equal(p.data.tracking.steps.quotation.updatedById,u.MANAGER.id);
+ assert.equal(p.data.tracking.steps.quotation.updatedBy,u.MANAGER.name);
+ assert.equal(p.data.tracking.steps.quotation.history.length,2);
+ assert.equal(p.data.tracking.steps.quotation.history[0].status,'In Progress');
+ assert.equal((await s.snapshot(u.PARTNER)).projects.find(row=>row.id===projectId).data.tracking.steps.quotation.note,'Customer requested revised pricing');
+ await assert.rejects(s.act(u.ADMIN,'project.tracking',{id:projectId,version:p.version,stepId:'order_confirmation',status:'Completed',eventDate:'2026-01-04',note:'Cannot skip hold'}),/earlier tracking stages/);
  await s.run("UPDATE projects SET status='Completed' WHERE id=?",projectId);
  await s.act(u.ADMIN,'project.tracking',{id:projectId,version:p.version,applicationNumber:'APP-TEST-CORRECTED'});
  p=await s.one('SELECT * FROM projects WHERE id=?',projectId);assert.equal(p.status,'Completed');
