@@ -16,7 +16,6 @@ export default function PublicHeader({about = false, projects = false}: {about?:
   return <header className="sh-header">
     <Brand/>
     <nav id="public-navigation" className={`sh-navigation ${menu ? 'is-open' : ''}`} aria-label="Main navigation" onClick={() => setMenu(false)}>
-      {(about || projects) && <Link href="/">Home</Link>}
       <Link href="/about" aria-current={about ? 'page' : undefined}>About Us</Link>
       <Link href="/projects" aria-current={projects ? 'page' : undefined}>Projects</Link>
       <a href={`${home}#solutions`}>Our offerings</a>
