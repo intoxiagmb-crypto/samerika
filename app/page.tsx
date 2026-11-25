@@ -5,7 +5,7 @@ import PublicHeader from '@/components/public-header';
 import Image from 'next/image';
 import Link from 'next/link';
 import SolarPlanner from '@/components/solar-planner';
-import { ArrowRight, ArrowUpRight, Building2, Check, CheckCircle2, ClipboardCheck, FileText, House, Leaf, MessageCircle, Minus, PanelsTopLeft, Plus, ShieldCheck, Sun, Users, Headphones, BriefcaseBusiness } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Building2, Check, CheckCircle2, ClipboardCheck, FileText, House, Leaf, MessageCircle, Minus, PanelsTopLeft, Plus, ShieldCheck, Sun, Users, Headphones } from 'lucide-react';
 import './home.css';
 import './home-subsidy.css';
 import './home-highlights.css';
@@ -140,20 +140,6 @@ export default function HomePage() {
         <Image src="/images/projects/residential.webp" alt="Illustrative home with blue rooftop solar panels in a leafy neighbourhood" width={1200} height={800} sizes="(max-width: 700px) 88vw, 46vw"/>
         <figcaption><Leaf size={16} aria-hidden="true"/> Rooftop solar illustration</figcaption>
       </figure>
-    </section>
-
-    <section className="sh-section sh-workspaces" id="portals" aria-labelledby="workspaces-heading">
-      <div className="sh-workspaces-heading"><div><span className="sh-eyebrow">ALREADY PART OF THE TEAM?</span><h2 id="workspaces-heading">Your role.<br/><em>Your workspace.</em></h2></div><p>Choose the login that fits your role.<br/> Pick up right where you left off.</p></div>
-      <div className="sh-workspaces-grid">{[
-        {title:'Company login',role:'Owners & administrators',text:'Keep your company, team and solar projects moving together.',features:['Business overview','Team management'],cta:'Open company login',href:'/login/company',Icon:Building2,tone:'company',label:'MANAGE & GROW'},
-        {title:'Company staff login',role:'Company employees',text:'Follow up on enquiries and manage the work assigned to your role.',features:['Enquiries & follow-ups','Project coordination'],cta:'Open staff login',href:'/login/staff',Icon:BriefcaseBusiness,tone:'staff',label:'ORGANISE & DELIVER'},
-        {title:'Partner login',role:'Channel partners',text:'Stay connected to your referrals, projects and approved earnings.',features:['Your referrals','Approved earnings'],cta:'Open partner login',href:'/login/partner',Icon:Users,tone:'agent',label:'REFER & CONNECT'},
-      ].map(({title,role,text,features,cta,href,Icon,tone,label})=><Link key={href} href={href} className={`sh-workspace-card ${tone}`} aria-label={cta}>
-        <div className="sh-workspace-top"><span className="sh-workspace-icon"><Icon size={27} strokeWidth={1.7}/></span><span className="sh-workspace-label">{label}</span></div>
-        <div className="sh-workspace-body"><span className="sh-workspace-role">{role}</span><h3>{title}</h3><p>{text}</p><ul>{features.map(feature=><li key={feature}><Check size={13}/>{feature}</li>)}</ul></div>
-        <div className="sh-workspace-action"><span>{cta}</span><span><ArrowRight size={18}/></span></div>
-      </Link>)}</div>
-      <div className="sh-workspaces-note"><span><ShieldCheck size={16}/> Your access follows your assigned role.</span><p>Exploring solar for your property? <Link href="/enquiry">Start an enquiry <ArrowUpRight size={15}/></Link></p></div>
     </section>
 
     <section className="sh-section sh-answers" id="faqs" aria-labelledby="answers-heading">
