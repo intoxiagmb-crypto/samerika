@@ -7,6 +7,8 @@
 .sh-highlight-card>h3{display:flex;align-items:flex-end;min-height:66px;margin:0 0 10px;color:#092d61;font-size:28px;line-height:1.18;letter-spacing:-.6px;font-weight:650}
 .sh-highlight-count>h3{font-size:46px;letter-spacing:-1.5px}
 .sh-highlight-count>h3>span{color:#c56400}
+.sh-highlight-count>h3>.sh-count-value{color:#092d61;font-variant-numeric:tabular-nums;min-width:3ch;text-align:right}
+.sh-highlight-count:focus-visible{outline:3px solid #0073c8;outline-offset:4px}
 .sh-highlight-card>p{font-size:16px;line-height:1.65;color:#526b88;margin:0}
 .sh-highlights-cta{display:flex;justify-content:space-between;align-items:center;gap:25px;padding:24px 28px;margin-top:23px;border:1px solid #d6e7f3;border-radius:14px;background:linear-gradient(110deg,#f3f9fc,#edf6fc)}
 .sh-highlights-cta>div{display:flex;align-items:center;gap:20px}

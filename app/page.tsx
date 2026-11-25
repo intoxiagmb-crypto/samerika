@@ -5,6 +5,7 @@ import PublicHeader from '@/components/public-header';
 import Image from 'next/image';
 import Link from 'next/link';
 import SolarPlanner from '@/components/solar-planner';
+import SolarHomesCounter from '@/components/solar-homes-counter';
 import { ArrowRight, ArrowUpRight, Building2, Check, CheckCircle2, ClipboardCheck, FileText, House, Leaf, MessageCircle, Minus, PanelsTopLeft, Plus, ShieldCheck, Sun, Users, Headphones } from 'lucide-react';
 import './home.css';
 import './home-subsidy.css';
@@ -53,7 +54,7 @@ export default function HomePage() {
     <section className="sh-highlights" id="solar-highlights" aria-labelledby="highlights-heading">
       <h2 id="highlights-heading">Powering more homes <span>with solar.</span></h2>
       <div className="sh-highlights-grid">
-        <article className="sh-highlight-card sh-highlight-count"><House size={32} strokeWidth={1.8} aria-hidden="true"/><h3>500<span>+</span></h3><p>Homes Solarized</p></article>
+        <SolarHomesCounter/>
         <article className="sh-highlight-card"><Sun size={32} strokeWidth={1.8} aria-hidden="true"/><h3>Rooftop solar</h3><p>For homes & businesses</p></article>
         <article className="sh-highlight-card"><FileText size={32} strokeWidth={1.8} aria-hidden="true"/><h3>Subsidy guidance</h3><p>PM Surya Ghar support</p></article>
         <article className="sh-highlight-card"><Headphones size={32} strokeWidth={1.8} aria-hidden="true"/><h3>Connected support</h3><p>From enquiry to handover</p></article>
