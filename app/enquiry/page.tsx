@@ -7,10 +7,14 @@ import './enquiry.css';
 export const metadata: Metadata = { title: 'Enquire about solar | Samerika Power Private Limited', description: 'Tell us a little about your home or business. Our team will help you plan your solar installation.' };
 export default async function EnquiryPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const params = await searchParams;
-  const property = typeof params.property === 'string' && ['Residential', 'Commercial', 'Industrial'].includes(params.property) ? params.property : 'Residential';
+  const solarProgram = params.program === 'pm-surya-ghar';
+  const property = !solarProgram && typeof params.property === 'string' && ['Residential', 'Commercial', 'Industrial'].includes(params.property) ? params.property : 'Residential';
   const pin = typeof params.pin === 'string' && /^[1-9]\d{5}$/.test(params.pin) ? params.pin : '';
   const bill = typeof params.monthlyBill === 'string' && /^\d{1,9}$/.test(params.monthlyBill) ? Number(params.monthlyBill) : 0;
-  const remarks = bill > 0 && bill <= 100000000 ? `Average monthly electricity bill: ₹${bill.toLocaleString('en-IN')} (customer estimate).` : '';
+  const remarks = [
+    solarProgram ? 'Interested in PM Surya Ghar – Muft Bijli Yojana for residential rooftop solar.' : '',
+    bill > 0 && bill <= 100000000 ? `Average monthly electricity bill: ₹${bill.toLocaleString('en-IN')} (customer estimate).` : '',
+  ].filter(Boolean).join('\n');
   return <main className="enquiry-page">
     <header className="enquiry-nav"><Brand/><Link href="/" className="enquiry-home">Back to home</Link></header>
     <section className="enquiry-card" aria-labelledby="enquiry-title">
