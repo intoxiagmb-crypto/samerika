@@ -2,7 +2,7 @@
 import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { Check, CheckCircle2, LoaderCircle, ShieldCheck, AlertCircle } from 'lucide-react';
-export default function EnquiryForm({ initialProperty = 'Residential', initialPin = '', initialRemarks = '' }: { initialProperty?: string; initialPin?: string; initialRemarks?: string }) {
+export default function EnquiryForm({ initialProperty = 'Residential', initialRemarks = '' }: { initialProperty?: string; initialRemarks?: string }) {
   const [busy, setBusy] = useState(false), [error, setError] = useState(''), [sent, setSent] = useState(false);
   const [property, setProperty] = useState(initialProperty);
   const submitting = useRef(false), successHeading = useRef<HTMLHeadingElement>(null), errorMessage = useRef<HTMLDivElement>(null);
@@ -12,7 +12,7 @@ export default function EnquiryForm({ initialProperty = 'Residential', initialPi
     submitting.current = true; setBusy(true); setError('');
     const values = Object.fromEntries(new FormData(event.currentTarget).entries());
     try {
-      const response = await fetch('/api/enquiries', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...values, property }) });
+      const response = await fetch('/api/enquiries', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...values, property, remarks: initialRemarks }) });
       const result = await response.json() as { ok?: boolean; error?: string };
       if (!response.ok || !result.ok) throw new Error(result.error || 'Your enquiry could not be submitted. Please try again.');
       setSent(true);
@@ -27,7 +27,11 @@ export default function EnquiryForm({ initialProperty = 'Residential', initialPi
     <form onSubmit={submit} aria-busy={busy}>
       <fieldset disabled={busy} className="enquiry-fields">
         <fieldset className="enquiry-property"><legend>I’m looking for solar for my</legend><div>{[['Residential', 'Home'], ['Commercial', 'Business'], ['Industrial', 'Industry']].map(([value, label]) => <label key={value} className={property === value ? 'selected' : ''}><input type="radio" name="property" value={value} checked={property === value} onChange={() => setProperty(value)}/><span>{label}</span></label>)}</div></fieldset>
-        <div className="enquiry-grid"><label>Full name <span>*</span><input name="name" autoComplete="name" required maxLength={120} placeholder="Your full name"/></label><label>Mobile number <span>*</span><input name="mobile" type="tel" inputMode="tel" autoComplete="tel-national" required pattern="(?:\+91[ -]?)?[6-9][0-9]{9}" maxLength={14} title="Enter a 10-digit Indian mobile number, optionally prefixed with +91." placeholder="10-digit mobile number"/></label><label className="enquiry-wide">Email address <span>*</span><input name="email" type="email" autoComplete="email" required maxLength={254} placeholder="you@example.com"/></label><label>City / town <span>*</span><input name="city" autoComplete="address-level2" required maxLength={100} placeholder="Your city"/></label><label>PIN code <span>*</span><input name="pin" defaultValue={initialPin} inputMode="numeric" autoComplete="postal-code" required pattern="[1-9][0-9]{5}" minLength={6} maxLength={6} title="Enter a 6-digit PIN code." placeholder="6-digit PIN code"/></label><label className="enquiry-wide">Anything we should know? <small>Optional</small><textarea name="remarks" defaultValue={initialRemarks} rows={2} maxLength={2000} placeholder="Your electricity bill, available roof space, or a question…"/></label></div>
+        <div className="enquiry-grid">
+          <label>Full name <span>*</span><input name="name" autoComplete="name" required maxLength={120} placeholder="Your full name"/></label>
+          <label>Mobile number <span>*</span><input name="mobile" type="tel" inputMode="tel" autoComplete="tel-national" required pattern="(?:\+91[ -]?)?[6-9][0-9]{9}" maxLength={14} title="Enter a 10-digit Indian mobile number, optionally prefixed with +91." placeholder="10-digit mobile number"/></label>
+          <label className="enquiry-wide">City / town <span>*</span><input name="city" autoComplete="address-level2" required maxLength={100} placeholder="Your city"/></label>
+        </div>
         <div className="enquiry-honeypot" aria-hidden="true"><label>Leave this field empty<input name="website" tabIndex={-1} autoComplete="off"/></label></div>
         <p className="enquiry-consent">By submitting, you agree that our team may contact you about this solar enquiry.</p>
         {error && <div ref={errorMessage} tabIndex={-1} className="enquiry-error" role="alert"><AlertCircle size={18}/><span>{error}</span></div>}

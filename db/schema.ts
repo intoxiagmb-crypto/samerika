@@ -1,4 +1,5 @@
 import { sqliteTable, text, integer, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { sql } from 'drizzle-orm';
 export const users = sqliteTable('users', {
  id: text('id').primaryKey(), email: text('email').notNull().unique(), name: text('name').notNull(),
  role: text('role').notNull(), status: text('status').notNull(), profile: text('profile').notNull().default('{}'), createdAt: text('created_at').notNull(),
@@ -8,7 +9,7 @@ export const leads = sqliteTable('leads', {
  customerEmail: text('customer_email').notNull(), name: text('name').notNull(), mobile: text('mobile').notNull().unique(),
  assignedTo: text('assigned_to').references(()=>users.id), status: text('status').notNull(), data: text('data').notNull(),
  createdAt: text('created_at').notNull(), updatedAt: text('updated_at').notNull(), version: integer('version').notNull().default(1),
-}, t=>[index('leads_partner_idx').on(t.partnerId), uniqueIndex('leads_email_unique').on(t.customerEmail)]);
+}, t=>[index('leads_partner_idx').on(t.partnerId), uniqueIndex('leads_email_unique').on(t.customerEmail).where(sql`${t.customerEmail} <> ''`)]);
 export const projects = sqliteTable('projects', {
  id: text('id').primaryKey(), leadId: text('lead_id').notNull().unique().references(()=>leads.id),
  managerId: text('manager_id').references(()=>users.id), technicianId: text('technician_id').references(()=>users.id), verifierId: text('verifier_id').references(()=>users.id),

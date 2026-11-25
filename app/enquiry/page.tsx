@@ -9,7 +9,6 @@ export default async function EnquiryPage({ searchParams }: { searchParams: Prom
   const params = await searchParams;
   const solarProgram = params.program === 'pm-surya-ghar';
   const property = !solarProgram && typeof params.property === 'string' && ['Residential', 'Commercial', 'Industrial'].includes(params.property) ? params.property : 'Residential';
-  const pin = typeof params.pin === 'string' && /^[1-9]\d{5}$/.test(params.pin) ? params.pin : '';
   const bill = typeof params.monthlyBill === 'string' && /^\d{1,9}$/.test(params.monthlyBill) ? Number(params.monthlyBill) : 0;
   const remarks = [
     solarProgram ? 'Interested in PM Surya Ghar – Muft Bijli Yojana for residential rooftop solar.' : '',
@@ -23,7 +22,7 @@ export default async function EnquiryPage({ searchParams }: { searchParams: Prom
         <div className="enquiry-promise"><MessageCircle size={21}/><div><strong>A conversation, first.</strong><span>Our team will contact you to understand your needs and explain the next steps.</span></div></div>
         <ul><li><Check size={16}/> No account needed</li><li><Check size={16}/> For homes & businesses</li></ul>
       </aside>
-      <div className="enquiry-form-panel"><EnquiryForm initialProperty={property} initialPin={pin} initialRemarks={remarks}/></div>
+      <div className="enquiry-form-panel"><EnquiryForm initialProperty={property} initialRemarks={remarks}/></div>
     </section>
 
   </main>;
