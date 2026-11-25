@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {createClient} from '@libsql/client';
 import {adaptDatabase} from '../lib/database.mjs';
 import {migrate} from '../lib/migrations.mjs';
+import { submitPublicEnquiry } from '../lib/enquiries.mjs';
 import { Business } from '../lib/business.mjs';
 import { DEFAULT_SETTINGS,quoteTotal } from '../lib/policy.mjs';
 const clients=[];
@@ -40,3 +41,123 @@ test('rate limits are persistent and admin cannot revoke own access',async()=>{c
 test('partner activation requires verified KYC and KYC remains private',async()=>{const {s,u}=await setup();const p=await s.user({userId:'new-partner',email:'new-partner@example.test',displayName:'New partner'},'PARTNER');await assert.rejects(s.act(u.ADMIN,'user.update',{id:p.id,role:'PARTNER',status:'Active'}),/KYC/);const id=await s.upload(p,{projectId:'',documentType:'Partner KYC',name:'business.pdf',mime:'application/pdf',size:100,key:'private-kyc'});await assert.rejects(s.fileAccess(u.CUSTOMER,id),/KYC access denied/);await s.act(u.ADMIN,'record.update',{id,status:'Verified',note:'Verified company document'});await s.act(u.ADMIN,'user.update',{id:p.id,role:'PARTNER',status:'Active'});assert.equal((await s.one('SELECT * FROM users WHERE id=?',p.id)).status,'Active');});
 
 test('customer requirements preserve energy usage and roof details and reject negative values',async()=>{const {s,u}=await setup();const id=await s.act(u.PARTNER,'lead.create',{...lead,monthlyBill:'4500',roofArea:'600'});const stored=await s.one('SELECT * FROM leads WHERE id=?',id);assert.equal(stored.data.monthlyBill,4500);assert.equal(stored.data.roofArea,600);await assert.rejects(s.act(u.PARTNER,'lead.create',{...lead,mobile:'9876543211',email:'second@example.test',monthlyBill:-1}),/greater than or equal to 0/);});
+
+test('customer and multiple catalogue items create a quote matching the supplied mixed-GST example',async()=>{
+ const {s,u}=await setup();const customerId=await s.act(u.ADMIN,'lead.create',lead);
+ const productIds=[];
+ for(const p of [{name:'630 W module',price:10330,taxRate:5,quantity:18},{name:'200AH battery',price:16780,taxRate:5,hsn:'85072000',quantity:10},{name:'Installation and labour',price:8000,taxRate:18,unit:'kW',quantity:10}]){
+  productIds.push(await s.act(u.ADMIN,'product.create',{brand:'Test',category:'Services',capacity:1,system:'On-grid',warranty:'Manufacturer terms',...p}));
+ }
+ const id=await s.act(u.ADMIN,'quote.create',{customerId,items:productIds.map((productId,i)=>({productId,quantity:[18,10,10][i],unitPrice:1,taxRate:0})),validUntil:'2099-12-31',taxMode:'CGST_SGST'});
+ const q=await s.one('SELECT * FROM records WHERE id=?',id);
+ assert.equal(q.amount,46582700);assert.equal(q.data.subtotal,43374000);assert.equal(q.data.tax,3208700);
+ assert.deepEqual(q.data.items.map(i=>i.tax),[929700,839000,1440000]);
+ assert.equal(q.data.customerDetails.mobile,lead.mobile);assert.equal(q.data.items[1].hsn,'85072000');
+ assert.equal((await s.one('SELECT * FROM leads WHERE id=?',customerId)).status,'Converted');
+ assert.equal((await s.one('SELECT * FROM projects WHERE id=?',q.project_id)).status,'Quotation');
+ const product=await s.one('SELECT * FROM records WHERE id=?',productIds[0]);
+ await s.act(u.ADMIN,'product.update',{...product.data,id:product.id,version:product.version,price:11000,taxRate:18});
+ assert.equal((await s.one('SELECT * FROM records WHERE id=?',id)).data.items[0].unitPrice,1033000);
+ const second=await s.act(u.ADMIN,'quote.create',{customerId,items:[{productId:product.id,quantity:1}],validUntil:'2099-12-31'});
+ assert.equal((await s.one('SELECT * FROM records WHERE id=?',second)).project_id,q.project_id);
+ assert.equal((await s.all('SELECT * FROM projects')).length,1);
+});
+
+test('item quotations validate before creating a project and enforce customer access',async()=>{
+ const {s,u}=await setup();const customerId=await s.act(u.ADMIN,'lead.create',lead);
+ const productId=await s.act(u.ADMIN,'product.create',{name:'Panel',brand:'Test',category:'Solar panel',capacity:1,price:100,taxRate:5,system:'On-grid',warranty:'Test'});
+ const draft={customerId,items:[{productId,quantity:1}],validUntil:'2099-12-31'};
+ await assert.rejects(s.act(u.SALES,'quote.create',draft),/not assigned/);
+ await assert.rejects(s.act(u.CUSTOMER,'quote.create',draft),/permission/);
+ for(const patch of [{items:[]},{items:[{productId,quantity:0}]},{items:[{productId,quantity:0.0001}]},{items:[{productId,quantity:1},{productId,quantity:1}]},{discount:101},{validUntil:'2099-02-30'},{items:[{productId:'missing',quantity:1}]}])await assert.rejects(s.act(u.ADMIN,'quote.create',{...draft,...patch}));
+ assert.equal((await s.all('SELECT * FROM projects')).length,0);
+ assert.equal((await s.one('SELECT * FROM leads WHERE id=?',customerId)).status,'New');
+ await s.act(u.ADMIN,'record.update',{id:productId,status:'Archived'});
+ await assert.rejects(s.act(u.ADMIN,'quote.create',draft),/unavailable/);
+});
+
+const publicEnquiry={name:'Website Customer',mobile:'9876501234',email:'website@example.test',city:'Jaipur',pin:'302001',property:'Residential',remarks:'Interested in rooftop solar'};
+test('public enquiry creates a new company lead without creating accounts or trusting ownership fields',async()=>{
+ const {s,db,u}=await setup();const accounts=(await s.all('SELECT * FROM users')).length;
+ assert.deepEqual(await submitPublicEnquiry(db,{...publicEnquiry,owner_id:u.PARTNER.id,partner_id:u.PARTNER.id,status:'Approved',capacity:99}),{ok:true});
+ const l=await s.one('SELECT * FROM leads WHERE mobile=?',publicEnquiry.mobile);
+ assert.equal(l.status,'New');assert.equal(l.data.source,'Website');assert.ok([u.SALES.id,u.MANAGER.id].includes(l.owner_id));assert.equal(l.partner_id,null);assert.equal(l.assigned_to,null);assert.equal(l.data.capacity,null);assert.equal(l.data.qualificationRequired,true);
+ assert.equal((await s.all('SELECT * FROM users')).length,accounts);
+ const snap=await s.snapshot(u.ADMIN);assert.equal(snap.notifications.some(n=>n.entity_id===l.id),false);assert.equal(snap.audit.find(a=>a.entity_id===l.id).actor_name,'Website visitor');
+ assert.equal((await s.snapshot(u.PARTNER)).leads.length,0);assert.equal((await s.snapshot(u.SALES)).leads.length,1);
+ for(const role of ['SALES','MANAGER'])assert.ok((await s.snapshot(u[role])).notifications.some(n=>n.entity_id===l.id));
+ for(const role of ['TECHNICAL','VERIFIER','FINANCE'])assert.equal((await s.snapshot(u[role])).leads.length,0);
+ await assert.rejects(s.act(u.ADMIN,'project.create',{leadId:l.id}),/Confirm site details/);
+ await s.act(u.SALES,'lead.update',{id:l.id,status:'Qualified',qualification:{address:'12 Solar Lane',city:l.data.city,state:'Rajasthan',pin:l.data.pin,capacity:3,system:'On-grid',finance:'Cash'}});
+ const projectId=await s.act(u.SALES,'project.create',{leadId:l.id});assert.equal((await s.one('SELECT * FROM projects WHERE id=?',projectId)).data.capacity,3);
+});
+test('public duplicates and concurrent retries preserve original lead, referral and notifications',async()=>{
+ const {s,db,u}=await setup();const leadId=await s.act(u.PARTNER,'lead.create',lead);
+ const original=await s.one('SELECT * FROM leads WHERE id=?',leadId);
+ assert.deepEqual(await submitPublicEnquiry(db,{...publicEnquiry,mobile:lead.mobile}),{ok:true});
+ assert.deepEqual(await submitPublicEnquiry(db,{...publicEnquiry,email:lead.email}),{ok:true});
+ assert.deepEqual(await s.one('SELECT * FROM leads WHERE id=?',leadId),original);
+ await Promise.all([submitPublicEnquiry(db,publicEnquiry),submitPublicEnquiry(db,publicEnquiry)]);
+ assert.equal((await s.all('SELECT * FROM leads WHERE mobile=?',publicEnquiry.mobile)).length,1);
+ assert.equal((await s.all("SELECT * FROM audit WHERE action='enquiry.received'")).length,1);
+});
+test('public enquiry validates fields, normalizes contacts and rejects spam before creating leads',async()=>{
+ const {s,db}=await setup();
+ for(const patch of [{name:' '},{mobile:'123'},{mobile:'1234567890'},{email:'invalid'},{pin:'000000'},{city:''},{property:'Other'},{website:'spam'},{remarks:'x'.repeat(2001)}])await assert.rejects(submitPublicEnquiry(db,{...publicEnquiry,...patch}));
+ assert.equal((await s.all('SELECT * FROM leads')).length,0);
+ await submitPublicEnquiry(db,{...publicEnquiry,mobile:'+91 9876501234',email:' WEBSITE@EXAMPLE.TEST '});
+ assert.equal((await s.one('SELECT * FROM leads WHERE mobile=?',publicEnquiry.mobile)).customer_email,publicEnquiry.email);
+ for(let i=0;i<4;i++)await submitPublicEnquiry(db,publicEnquiry);
+ await assert.rejects(submitPublicEnquiry(db,publicEnquiry),e=>e.status===429);
+});
+test('public enquiry reports unavailable intake when no active intake staff exists',async()=>{
+ const db=await database();await assert.rejects(submitPublicEnquiry(db,publicEnquiry),e=>e.status===503);
+ const s=new Business(db);assert.equal((await s.all('SELECT * FROM leads')).length,0);
+});
+
+test('inbound enquiries notify only active intake staff and keep agent referrals intact',async()=>{
+ const {s,db,u}=await setup();
+ const id=await s.act(u.PARTNER,'lead.create',lead);
+ const stored=await s.one('SELECT * FROM leads WHERE id=?',id);assert.equal(stored.partner_id,u.PARTNER.id);
+ for(const role of ['SALES','MANAGER']){const snap=await s.snapshot(u[role]);assert.ok(snap.leads.some(l=>l.id===id));assert.ok(snap.notifications.some(n=>n.entity_id===id));}
+ for(const role of ['ADMIN','PARTNER','CUSTOMER','TECHNICAL','VERIFIER','FINANCE'])assert.equal((await s.snapshot(u[role])).notifications.some(n=>n.entity_id===id),false);
+ await s.act(u.ADMIN,'lead.update',{id,status:'Assigned',assignedTo:u.SALES.id});
+ assert.equal((await s.snapshot(u.MANAGER)).leads.some(l=>l.id===id),false);
+ assert.ok((await s.snapshot(u.SALES)).leads.some(l=>l.id===id));
+ await s.run("UPDATE users SET status='Suspended' WHERE role IN ('SALES','MANAGER')");
+ await assert.rejects(submitPublicEnquiry(db,publicEnquiry),e=>e.status===503);
+ await assert.rejects(s.act(u.PARTNER,'lead.create',{...lead,mobile:'9876500001',email:'no-staff@example.test'}),e=>e.status===503);
+ assert.equal((await s.all('SELECT * FROM leads')).length,1);
+});
+test('suspended staff receive no enquiry and old unassigned website leads reach the staff inbox',async()=>{
+ const {s,db,u}=await setup();await s.run("UPDATE users SET status='Suspended' WHERE id=?",u.MANAGER.id);
+ await submitPublicEnquiry(db,publicEnquiry);const l=await s.one('SELECT * FROM leads WHERE mobile=?',publicEnquiry.mobile);
+ assert.deepEqual((await s.all('SELECT user_id FROM notifications WHERE entity_id=?',l.id)).map(n=>n.user_id),[u.SALES.id]);
+ await s.run('UPDATE leads SET owner_id=? WHERE id=?',u.ADMIN.id,l.id);
+ assert.ok((await s.snapshot(u.SALES)).leads.some(row=>row.id===l.id));
+});
+
+test('application tracking persists staff updates, protects roles and rejects stale changes',async()=>{
+ const {s,u}=await setup();const {projectId}=await createProject(s,u);
+ let p=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ const patch={id:projectId,version:p.version,stepId:'registration',status:'Completed',eventDate:'2026-01-01',reference:'REG-ACK-TEST',applicationNumber:'APP-TEST-001'};
+ for(const role of ['PARTNER','CUSTOMER','TECHNICAL','VERIFIER','FINANCE'])await assert.rejects(s.act(u[role],'project.tracking',patch),e=>e.status===403);
+ await s.act(u.SALES,'project.tracking',patch);
+ p=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ assert.equal(p.data.tracking.applicationNumber,'APP-TEST-001');assert.equal(p.data.tracking.steps.registration.status,'Completed');
+ assert.equal(p.status,'Survey','Tracking does not override verified project completion');
+ assert.ok(p.data.phases.every(phase=>phase.status==='Pending'));
+ for(const role of ['ADMIN','PARTNER','CUSTOMER','SALES','MANAGER'])assert.equal((await s.snapshot(u[role])).projects.find(row=>row.id===projectId).data.tracking.applicationNumber,'APP-TEST-001');
+ await assert.rejects(s.act(u.SALES,'project.tracking',patch),e=>e.status===409);
+ assert.equal((await s.all("SELECT * FROM audit WHERE action='project.tracking'")).length,1);
+ const other=await s.user({userId:'other-sales',email:'other-sales@example.test',displayName:'Other sales'});
+ await s.act(u.ADMIN,'user.update',{id:other.id,role:'SALES',status:'Active'});
+ await assert.rejects(s.act({...other,role:'SALES'},'project.tracking',{...patch,version:p.version}),e=>e.status===403);
+ await s.act(u.MANAGER,'project.tracking',{id:projectId,version:p.version,stepId:'application',status:'In Progress',eventDate:'2026-01-02',note:'Application submitted'});
+ p=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ await s.run("UPDATE projects SET status='Completed' WHERE id=?",projectId);
+ await s.act(u.ADMIN,'project.tracking',{id:projectId,version:p.version,applicationNumber:'APP-TEST-CORRECTED'});
+ p=await s.one('SELECT * FROM projects WHERE id=?',projectId);assert.equal(p.status,'Completed');
+ await s.run("UPDATE projects SET status='Cancelled' WHERE id=?",projectId);
+ await assert.rejects(s.act(u.ADMIN,'project.tracking',{id:projectId,version:p.version,applicationNumber:'CANCELLED'}),/read-only/);
+});

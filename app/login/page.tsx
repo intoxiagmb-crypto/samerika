@@ -1,2 +1,20 @@
-import {Sun,Users,Building2,ArrowRight,ArrowLeft,ShieldCheck} from 'lucide-react';
-export default function LoginChooser(){return <main className="portal-choice"><a className="brand" href="/"><Sun/>solaris.</a><div className="choice-heading"><span className="eyebrow">WELCOME TO YOUR SOLAR WORKSPACE</span><h1>A brighter day<br/>starts here.</h1><p>Choose your portal to sign in and get things moving.</p></div><div className="choice-grid"><a href="/login/agent" className="choice-card"><span className="entry-icon"><Users size={28}/></span><h2>Agent portal</h2><p>Add customer requirements, follow your installations and track your earnings.</p><span>Sign in as an agent <ArrowRight size={18}/></span></a><a href="/login/company" className="choice-card"><span className="entry-icon amber-icon"><Building2 size={28}/></span><h2>Company portal</h2><p>Manage your leads, team, quotations, project approvals and payouts.</p><span>Sign in to your company <ArrowRight size={18}/></span></a></div><a href="/login/customer" className="text-link">Customer sign in</a><p className="choice-note"><ShieldCheck size={16}/> Your account determines which records and actions you can access.</p><a href="/" className="text-link"><ArrowLeft size={15}/> Back to website</a></main>}
+import Brand from '@/components/brand';
+import { Users, Building2, BriefcaseBusiness, ArrowRight, ArrowLeft, ShieldCheck } from 'lucide-react';
+
+const portals = [
+  { href: '/login/company', title: 'Company login', label: 'FOR OWNERS & ADMINISTRATORS', icon: Building2, description: 'Manage your company, create staff accounts, assign leads and oversee projects and payments.' },
+  { href: '/login/staff', title: 'Company staff login', label: 'FOR YOUR COMPANY TEAM', icon: BriefcaseBusiness, description: 'Follow up on enquiries, prepare quotations and manage the work assigned to your staff role.' },
+  { href: '/login/agent', title: 'Agent login', label: 'FOR CHANNEL PARTNERS', icon: Users, description: 'Submit customer requirements, follow your installations and track your approved earnings.' },
+];
+
+export default function LoginChooser() {
+  return <main className="portal-choice three-portals">
+    <Brand/>
+    <div className="choice-heading"><span className="eyebrow">WELCOME TO YOUR SOLAR WORKSPACE</span><h1>One team.<br/>Your own workspace.</h1><p>Choose the login that matches your account.</p></div>
+    <div className="choice-grid">{portals.map(({ href, title, label, icon: Icon, description }) => <a key={href} href={href} className="choice-card">
+      <span className="entry-icon"><Icon size={28}/></span><span className="eyebrow">{label}</span><h2>{title}</h2><p>{description}</p><span className="choice-action">Sign in <ArrowRight size={18}/></span>
+    </a>)}</div>
+    <p className="choice-note"><ShieldCheck size={16}/> Use the account provided by your company administrator.</p>
+    <a href="/" className="text-link"><ArrowLeft size={15}/> Back to website</a>
+  </main>;
+}

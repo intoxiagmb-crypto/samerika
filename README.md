@@ -1,17 +1,17 @@
-# Solaris — Solar Business Platform
+# Samerika Power Private Limited — Solar Business Platform
 
-A responsive solar company website and connected operations workspace with cool-grey surfaces, cobalt-blue navigation, white rounded cards, readable forms, an original solar-home illustration and separate agent/company sign-in pages.
+A responsive solar company website and connected operations workspace with logo-matched blue navigation, light surfaces, orange actions and green success accents, landscape illustrations, rounded cards and separate company, staff and agent sign-in pages. Phone layouts include bottom navigation, readable record cards, touch-sized controls and scrollable forms.
 
-The current dashboard adapts the [supplied Pinterest reference](https://www.pinterest.com/pin/1132022056371365656/): a split blue sidebar, welcome card, vertical project-stage chart, installation progress rings and a right-hand schedule/update column. Charts use role-scoped stored records; progress percentages measure completed installation steps. The original reference image is not redistributed.
+The dashboard combines the supplied mobile layout reference with the Samerika logo palette: a blue landscape welcome card, blue project insights with orange highlights, leaf-green completion states, light cards and bottom navigation on smaller screens. The desktop workspace keeps a sidebar and schedule/update column. Charts use role-scoped stored records; progress percentages measure completed installation steps. The original reference image is not redistributed.
 
 ## What works
 
-- Public solar solutions, installation process, partner programme and FAQ pages.
+- Public solar solutions, installation process, partner programme and FAQ pages. Homepage Enquire now buttons open a compact, mobile-friendly `/enquiry` form without sign-in. Submissions create New leads with Website attribution and administrator notifications; duplicates preserve existing ownership. Contact details remain unverified until follow-up. Confirm site details on a website lead before project conversion or quotation creation.
 - Password/session sign-in and eight server-enforced business roles: administrator, customer, partner, sales, relationship manager, technician, document reviewer and finance.
 - Partner applications, private KYC uploads, KYC review and account approval.
 - Database-backed enquiries, mobile/email duplicate protection, original partner attribution, sales assignment, call notes and follow-up dates.
 - Lead conversion into unique projects with assigned managers, technicians and reviewers.
-- Product/kit catalogue and company-controlled prices. Server-calculated quotations with immutable price snapshots, internal approval, customer publishing, acceptance/rejection and browser print/PDF.
+- Product/service catalogue with editable prices, units, HSN/SAC and item GST rates. Select a customer and multiple items to prepare a quotation with a live preview, quantities, discount, GST summary, amount in words, terms and A4 print/PDF. The first quote creates its linked project automatically. Saved prices and customer/company details remain immutable snapshots, with internal approval, customer publishing and acceptance/rejection. Configure company address, GSTIN, bank details and default quotation terms in Settings.
 - Site surveys, private project documents, document review, bank/DISCOM/net-metering approval tracking.
 - Eight installation phases, evidence references, quality results, handover acknowledgement and completion gates.
 - Configurable per-kW incentives captured with their rule snapshot, admin approval, finance payout records, failed-payment retry and verified payment evidence.
@@ -27,7 +27,7 @@ This project now uses **Next.js on Node 22**, **Turso libSQL** for persistent SQ
 2. Create/connect a **Turso libSQL database** and a **private** Vercel Blob store. Set `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, and `BLOB_READ_WRITE_TOKEN` in the Vercel project's Production environment. Use separate database and storage resources for Preview deployments. These are server secrets; never use `NEXT_PUBLIC_` names.
 3. Copy `.env.example` to ignored `.env.local` locally and enter the same database credentials securely. Run `npm ci`, then `npm run db:migrate` once against the intended database. Migrations run in a transaction and record checksums; repeat runs skip completed migrations. The build does not modify databases.
 4. Run `npm run admin:create` in an interactive local terminal using those database credentials. It prompts for the owner's name, email and a password of at least 12 characters (hidden input). It refuses to create a second bootstrap administrator. There is no public first-visitor administrator registration.
-5. Deploy/redeploy the `main` commit. Sign in at `/login/company`. Under **People & partners**, choose **Create account** to add staff, customers and agents. Share credentials privately. **Reset password** revokes all existing sessions for that account. Pending partner accounts can sign in and submit KYC; they cannot create leads until the administrator verifies KYC and activates them.
+5. Deploy/redeploy the `main` commit. Sign in at `/login/company`. Under **People & partners**, choose **Create account** to add staff, customers and agents. Administrators use `/login/company`, employees use `/login/staff`, and partners use `/login/agent`. The public login chooser shows these three entry points. The legacy customer route remains available for existing accounts. Active Sales and Manager staff receive new enquiry notifications and share unassigned Website/Channel Partner enquiries; assigned enquiries follow existing record permissions. Company administrators retain oversight but receive no new enquiry intake notifications. Create at least one active Sales or Manager account before accepting inbound enquiries. Share credentials privately. **Reset password** revokes all existing sessions for that account. Pending partner accounts can sign in and submit KYC; they cannot create leads until the administrator verifies KYC and activates them.
 6. Configure company details, documents, catalogue and incentive rates in the dashboard before using real business records.
 
 The build works without production secrets. Live sign-in and database operations require a migrated Turso database; uploads require a private Blob store. Vercel never falls back to a temporary local database or local uploaded files. No remote resources, credentials, migrations or live deployment are created merely by building or pushing the source.
@@ -48,7 +48,7 @@ npm run dev
 
 Open `http://127.0.0.1:5175`. Agent sign-in is `/login/agent`, company sign-in is `/login/company`, and customer sign-in is `/login/customer`.
 
-Local development stores SQLite in ignored `.solaris/local.db` and private files in `.solaris/files`. Demo setup creates three local accounts with distinct random passwords in ignored `.solaris/demo-credentials.json` (owner-only permissions), preserves existing accounts and refuses to run with remote database/storage credentials. It does not create production users or overwrite the old local Cloudflare state.
+Local development stores SQLite in ignored `.solaris/local.db` and private files in `.solaris/files`. Demo setup creates four local accounts (company admin, sales staff, agent and legacy customer) with distinct random passwords in ignored `.solaris/demo-credentials.json` (owner-only permissions), preserves existing accounts and refuses to run with remote database/storage credentials. It does not create production users or overwrite the old local Cloudflare state.
 
 For an empty local workspace without demo accounts, run `npm run db:migrate`, then `npm run admin:create`.
 
@@ -86,8 +86,12 @@ This is a working initial implementation, **not a claim that the entire enterpri
 
 ## Assets and publication
 
-Current artwork: original code-native solar-home SVG in `components/solar-scene.tsx`. The legacy Earth asset is retained but unused. Fonts: DM Sans and Manrope via Google Fonts with system fallbacks. Icons: Lucide.
+Brand: Samerika Power Private Limited. The supplied company logo is recreated as transparent SVG paths in `public/brand/`, with stacked, horizontal, wordmark and emblem variants; lettering is outlined and needs no font. The same emblem is used as the favicon. Current artwork: original code-native solar-home SVG in `components/solar-scene.tsx`. The legacy Earth asset is retained but unused. Fonts: DM Sans and Manrope via Google Fonts with system fallbacks. Icons: Lucide.
 
 Design research: [Aurora solar sales workflow](https://docs.aurorasolar.com/reference/common-workflows) informed the enquiry-to-survey-to-quotation flow; [OWASP session management](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html) and [password storage](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html) informed local sign-in and session handling.
 
 GitHub pushes trigger Vercel builds when the repository is connected. Production database migrations and account bootstrap are explicit operator steps, never demo seeding during deployment.
+
+Application tracking is available at `/portal?view=tracking` and from each project's **Track application** button. It records the ten application milestones separately from the installation checklist. Admin, Sales and Manager users with project access can save an application number, stage status, status date and acknowledgement/progress note. Agents and customers can read only their accessible projects. Existing projects start with pending tracking stages; no government status is inferred. Updates are manual, sequenced, audited and protected against stale saves; they do not mark an installation complete or verify a subsidy payment. Desktop uses a horizontal timeline; phones use a vertical timeline.
+
+The public homepage uses a full-width solar rooftop hero, property offerings, benefits, a project enquiry planner, installation process, illustrative tracking preview, three login entry points and accessible FAQs. The visual layout was inspired by the user-supplied SolarSquare homepage; Samerika branding and original copy are used. The rooftop hero is AI-generated illustrative imagery, not a completed customer installation. The planner carries validated property type, PIN and estimated monthly bill into the existing enquiry form; contact details and submission remain in that form. No customer ratings, savings guarantees or installation counts are invented. See `docs/homepage-visual.md` for the image prompt and provenance.

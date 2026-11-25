@@ -15,9 +15,10 @@ try {
   try { credentials = JSON.parse(await readFile('.solaris/demo-credentials.json', 'utf8')); }
   catch (error) {
     if (error.code !== 'ENOENT') throw error;
-    credentials = Object.fromEntries(['company', 'agent', 'customer'].map(portal => [portal, { email: `${portal}@solaris.demo`, password: randomBytes(24).toString('base64url') }]));
+    credentials = Object.fromEntries(['company', 'staff', 'agent', 'customer'].map(portal => [portal, { email: `${portal}@solaris.demo`, password: randomBytes(24).toString('base64url') }]));
   }
-  for (const [portal, role] of [['company', 'ADMIN'], ['agent', 'PARTNER'], ['customer', 'CUSTOMER']]) {
+  credentials.staff ??= { email: 'staff@solaris.demo', password: randomBytes(24).toString('base64url') };
+  for (const [portal, role] of [['company', 'ADMIN'], ['staff', 'SALES'], ['agent', 'PARTNER'], ['customer', 'CUSTOMER']]) {
     const id = `local-demo-${portal}`, credential = credentials[portal];
     if (await db.prepare('SELECT id FROM users WHERE id=?').bind(id).first()) continue;
     const { salt, hash } = hashPassword(credential.password);

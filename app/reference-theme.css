@@ -539,3 +539,8 @@ dl>div, .phase, .related-record, .integration-row { border-color: #e7edf7; }
 .settings-card>svg, .related-record>svg { color: #657bb8; }
 .total-line dd, .timeline-item b { color: #415b87; }
 .timeline-item p, .timeline-item small, .ticket-message small, .notifications-panel small { color: #65758e; }
+
+/* Public enquiry entry points. */
+.site-header .header-enquiry{font-size:14px;white-space:nowrap;margin-left:auto;padding:11px 18px}
+.site-header .site-nav{margin-left:auto}
+@media(max-width:760px){.site-header{gap:12px}.site-header .header-enquiry{font-size:13px;padding:10px 13px;min-height:40px}.site-header .header-login{display:none}.site-header>.brand{font-size:24px}.light-hero-actions .button{font-size:14px}.site-header .site-nav{margin-left:0}}

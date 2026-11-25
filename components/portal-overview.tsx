@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { ArrowUpRight, ArrowRight, CalendarDays, ChevronRight, Clock3, FileText, FolderKanban, Plus, Sun, Wallet, Zap, CheckCircle2 } from 'lucide-react';
-import SolarScene from './solar-scene';
+import SolarLandscape from './solar-landscape';
 
 type Row = Record<string, any>;
 type Data = { user: Row; leads: Row[]; projects: Row[]; records: Row[]; notifications: Row[] };
@@ -34,13 +34,14 @@ export default function PortalOverview({ data, onNavigate, onCreate, onDetail }:
   return <div className="reference-dashboard">
     <div className="overview-center">
       <section className="welcome-card">
+        <SolarLandscape className="welcome-landscape"/>
         <div className="welcome-copy">
-          <span className="welcome-kicker">{agent ? 'YOUR AGENT WORKSPACE' : 'YOUR COMPANY WORKSPACE'}</span>
+          <span className="welcome-kicker">{agent ? 'YOUR AGENT WORKSPACE' : data.user.role === 'CUSTOMER' ? 'YOUR SOLAR WORKSPACE' : 'YOUR COMPANY WORKSPACE'}</span>
           <h2>Hello, {data.user.name.split(' ')[0].split('@')[0]} <span className="hello-sun">✦</span></h2>
-          <p>{newLeads.length ? <><strong>{newLeads.length} new {newLeads.length === 1 ? 'enquiry' : 'enquiries'}</strong> and <strong>{active.length} active projects.</strong><br/>Let’s make it a productive day.</> : <>Your next solar opportunity starts here.<br/>Keep every customer and project connected.</>}</p>
+          <p>{newLeads.length ? <><strong>{newLeads.length} new {newLeads.length === 1 ? 'enquiry' : 'enquiries'}</strong> and <strong>{active.length} active projects.</strong><br/>Small steps. A brighter tomorrow.</> : <>Your next solar opportunity starts here.<br/>Keep every customer and project connected.</>}</p>
           <button className="welcome-link" onClick={() => onNavigate(newLeads.length ? 'leads' : 'projects')}>Review {newLeads.length ? 'enquiries' : 'projects'} <ArrowUpRight size={14}/></button>
         </div>
-        <SolarScene className="welcome-scene"/>
+
       </section>
 
       <div className="overview-totals">
@@ -59,7 +60,7 @@ export default function PortalOverview({ data, onNavigate, onCreate, onDetail }:
             <div className="chart-legend"><span/><span>Projects by current stage</span><b>{period === 'month' ? 'THIS MONTH' : 'ALL TIME'}</b></div>
           </div>
           <div className="overview-section-title recent-title"><h3>{agent ? 'Your customers' : 'Recent enquiries'}</h3><button onClick={() => onNavigate('leads')}>See all</button></div>
-          <div className="overview-lead-list">{data.leads.slice(0, 3).map((lead, i) => <button className="overview-lead" key={lead.id} onClick={() => onDetail(lead, 'lead')}><span className={`customer-initial initial-${i}`}>{lead.name.split(' ').map((s: string) => s[0]).slice(0, 2).join('')}</span><span><b>{lead.name}</b><small>{lead.data.capacity} kW · {lead.data.city}</small></span><span className="lead-state">{lead.status}</span><ChevronRight size={15}/></button>)}{!data.leads.length && <div className="overview-card small-empty"><FileText size={22}/><p>Your customer requirements will appear here.</p>{canAdd && <button onClick={onCreate}>Add a requirement <Plus size={13}/></button>}</div>}</div>
+          <div className="overview-lead-list">{data.leads.slice(0, 3).map((lead, i) => <button className="overview-lead" key={lead.id} onClick={() => onDetail(lead, 'lead')}><span className={`customer-initial initial-${i}`}>{lead.name.split(' ').map((s: string) => s[0]).slice(0, 2).join('')}</span><span><b>{lead.name}</b><small>{lead.data.capacity?`${lead.data.capacity} kW`:'Size to be assessed'} · {lead.data.city}</small></span><span className="lead-state">{lead.status}</span><ChevronRight size={15}/></button>)}{!data.leads.length && <div className="overview-card small-empty"><FileText size={22}/><p>Your customer requirements will appear here.</p>{canAdd && <button onClick={onCreate}>Add a requirement <Plus size={13}/></button>}</div>}</div>
         </section>
 
         <section className="progress-section">
