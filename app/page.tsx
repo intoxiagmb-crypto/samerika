@@ -174,6 +174,6 @@ export default function HomePage() {
       </div></section>
 
     </div>
-    <div className="sh-mobile-cta"><Link href="/login" className="sh-button sh-outline">Sign in <ArrowUpRight size={16}/></Link><Link href="/enquiry" className="sh-button sh-primary">Enquire now <ArrowRight size={17}/></Link></div>
+    <div className="sh-mobile-cta"><Link href="/enquiry" className="sh-button sh-primary">Enquire now <ArrowRight size={17}/></Link></div>
   </main>;
 }
