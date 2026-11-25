@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import PublicHeader from '@/components/public-header';
 import Image from 'next/image';
 import Link from 'next/link';
 import Brand from '@/components/brand';
 import SolarPlanner from '@/components/solar-planner';
-import { ArrowRight, ArrowUpRight, Building2, Check, CheckCircle2, ChevronDown, ClipboardCheck, FileText, House, Leaf, Menu, MessageCircle, Minus, PanelsTopLeft, Plus, ShieldCheck, Sun, Users, X, Clock3, Headphones, BriefcaseBusiness } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Building2, Check, CheckCircle2, ClipboardCheck, FileText, House, Leaf, MessageCircle, Minus, PanelsTopLeft, Plus, ShieldCheck, Sun, Users, Clock3, Headphones, BriefcaseBusiness } from 'lucide-react';
 import './home.css';
 
 const offerings = [
@@ -35,27 +36,10 @@ const faqs = [
 ];
 
 export default function HomePage() {
-  const [menu, setMenu] = useState(false);
   const [faq, setFaq] = useState<number | null>(0);
-  useEffect(() => {
-    const close = (event: KeyboardEvent) => { if (event.key === 'Escape') setMenu(false); };
-    window.addEventListener('keydown', close);
-    return () => window.removeEventListener('keydown', close);
-  }, []);
   return <main className="samerika-home">
     <a className="sh-skip" href="#home-content">Skip to content</a>
-    <header className="sh-header">
-      <Brand/>
-      <nav id="home-navigation" className={`sh-navigation ${menu ? 'is-open' : ''}`} aria-label="Main navigation">
-        <a href="#solutions" onClick={() => setMenu(false)}>Our offerings <ChevronDown size={14}/></a>
-        <a href="#why-samerika" onClick={() => setMenu(false)}>Why Samerika</a>
-        <a href="#how-it-works" onClick={() => setMenu(false)}>How it works</a>
-        <a href="#faqs" onClick={() => setMenu(false)}>FAQs</a>
-        <Link href="/login" className="sh-nav-login">Sign in <ArrowUpRight size={14}/></Link>
-      </nav>
-      <Link href="/enquiry" className="sh-button sh-primary sh-header-cta">Enquire now <ArrowRight size={16}/></Link>
-      <button className="sh-menu" aria-label={menu ? 'Close menu' : 'Open menu'} aria-controls="home-navigation" aria-expanded={menu} onClick={() => setMenu(!menu)}>{menu ? <X/> : <Menu/>}</button>
-    </header>
+    <PublicHeader/>
 
     <section className="sh-hero" id="home-content" aria-labelledby="home-title">
       <Image src="/images/samerika-rooftop-hero.webp" alt="Illustrative rooftop solar canopy over a sunlit Indian home terrace" fill sizes="(max-width: 700px) 1200px, 100vw" preload className="sh-hero-image"/>
@@ -176,7 +160,7 @@ export default function HomePage() {
       <footer className="sh-site-footer">
         <div className="sh-site-footer-main">
           <div className="sh-site-footer-brand"><Brand/><p>Samerika Power Private Limited</p><span>Solar for your space.<br/> People to connect every step.</span><span className="sh-site-footer-tag"><Leaf size={15}/> Better energy. Better connected.</span></div>
-          <nav className="sh-site-footer-nav" aria-label="Explore solar footer navigation"><h3>Explore solar</h3><a href="#solutions">Our offerings</a><a href="#why-samerika">Why Samerika</a><a href="#how-it-works">How it works</a><a href="#faqs">FAQs & answers</a></nav>
+          <nav className="sh-site-footer-nav" aria-label="Explore solar footer navigation"><h3>Explore solar</h3><Link href="/about">About Us</Link><a href="#solutions">Our offerings</a><a href="#why-samerika">Why Samerika</a><a href="#how-it-works">How it works</a><a href="#faqs">FAQs & answers</a></nav>
           <nav className="sh-site-footer-nav" aria-label="Workspace footer navigation"><h3>Your workspace</h3><Link href="/login/company">Company login</Link><Link href="/login/staff">Company staff login</Link><Link href="/login/agent">Agent login</Link><Link href="/portal?view=tracking">Project tracking <ArrowUpRight size={13}/></Link></nav>
           <div className="sh-site-footer-help"><span className="sh-site-footer-help-icon"><MessageCircle size={22}/></span><h3>Let’s find your next step.</h3><p>Share your site details and questions with our company team.</p><Link href="/enquiry">Send an enquiry <ArrowRight size={16}/></Link></div>
         </div>
