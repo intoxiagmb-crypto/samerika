@@ -2,7 +2,6 @@ import type {Metadata} from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import {Building2, ClipboardCheck, FileText, Headphones, House, Leaf, PanelsTopLeft, Sun, Users} from 'lucide-react';
-import Brand from '@/components/brand';
 import PublicHeader from '@/components/public-header';
 import '../home.css';
 import './about.css';
@@ -51,6 +50,6 @@ export default function AboutPage() {
 
       <section className="sa-invite" aria-labelledby="invite-title"><Sun size={42} strokeWidth={1.4}/><span className="sa-label">LET’S GET TO KNOW YOUR ROOFTOP</span><h2 id="invite-title">Your next chapter<br/>can start with the sun.</h2><p>Tell us about your space. Our team will help you understand the next step.</p><Link href="/enquiry" className="sh-button sh-primary">Enquire about solar</Link><span className="sa-invite-note">No account needed to send an enquiry.</span></section>
     </main>
-    <footer className="sa-footer"><div><Brand/><p>Samerika Power Private Limited<br/>Better energy, connected.</p></div><nav aria-label="Footer navigation"><Link href="/">Home</Link><Link href="/about" aria-current="page">About Us</Link><Link href="/projects">Projects</Link><Link href="/enquiry">Contact our team</Link><Link href="/login">Portal login</Link></nav><small>© {new Date().getFullYear()} Samerika Power Private Limited</small></footer>
+
   </div>;
 }

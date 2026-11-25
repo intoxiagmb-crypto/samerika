@@ -21,6 +21,6 @@ export default async function EnquiryPage({ searchParams }: { searchParams: Prom
       </aside>
       <div className="enquiry-form-panel"><EnquiryForm initialProperty={property} initialPin={pin} initialRemarks={remarks}/></div>
     </section>
-    <footer className="enquiry-page-footer">Samerika Power Private Limited · Better energy, connected.</footer>
+
   </main>;
 }

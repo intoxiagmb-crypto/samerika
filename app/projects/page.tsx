@@ -2,7 +2,6 @@ import type {Metadata} from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import {Wheat, Building2, Factory, GraduationCap, House, Leaf, Sun, ClipboardCheck, FileText, PanelsTopLeft} from 'lucide-react';
-import Brand from '@/components/brand';
 import PublicHeader from '@/components/public-header';
 import '../home.css';
 import './projects.css';
@@ -49,6 +48,6 @@ export default function ProjectsPage() {
 
       <section className="sp-cta"><Sun size={35}/><h2>Let’s plan what’s next<br/>for your rooftop.</h2><p>Share your requirements. Our company team will follow up.</p><Link href="/enquiry" className="sh-button sh-primary">Start a project enquiry</Link></section>
     </main>
-    <footer className="sp-footer"><Brand/><nav aria-label="Footer navigation"><Link href="/">Home</Link><Link href="/about">About Us</Link><Link href="/projects" aria-current="page">Projects</Link><Link href="/enquiry">Contact our team</Link></nav><small>© {new Date().getFullYear()} Samerika Power Private Limited</small></footer>
+
   </div>;
 }

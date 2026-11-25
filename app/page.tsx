@@ -4,7 +4,6 @@ import { useState } from 'react';
 import PublicHeader from '@/components/public-header';
 import Image from 'next/image';
 import Link from 'next/link';
-import Brand from '@/components/brand';
 import SolarPlanner from '@/components/solar-planner';
 import { ArrowRight, ArrowUpRight, Building2, Check, CheckCircle2, ClipboardCheck, FileText, House, Leaf, MessageCircle, Minus, PanelsTopLeft, Plus, ShieldCheck, Sun, Users, Clock3, Headphones, BriefcaseBusiness } from 'lucide-react';
 import './home.css';
@@ -157,15 +156,7 @@ export default function HomePage() {
         <div className="sh-invitation-action"><Link href="/enquiry" className="sh-button sh-dark">Talk to our solar team <ArrowRight size={19}/></Link><span><ShieldCheck size={15}/> No account needed. Our staff will follow up.</span></div>
         <Sun className="sh-invitation-sun" size={310} strokeWidth={.65} aria-hidden="true"/>
       </div></section>
-      <footer className="sh-site-footer">
-        <div className="sh-site-footer-main">
-          <div className="sh-site-footer-brand"><Brand/><p>Samerika Power Private Limited</p><span>Solar for your space.<br/> People to connect every step.</span><span className="sh-site-footer-tag"><Leaf size={15}/> Better energy. Better connected.</span></div>
-          <nav className="sh-site-footer-nav" aria-label="Explore solar footer navigation"><h3>Explore solar</h3><Link href="/about">About Us</Link><Link href="/projects">Projects</Link><a href="#solutions">Our offerings</a><a href="#why-samerika">Why Samerika</a><a href="#how-it-works">How it works</a><a href="#faqs">FAQs & answers</a></nav>
-          <nav className="sh-site-footer-nav" aria-label="Workspace footer navigation"><h3>Your workspace</h3><Link href="/login/company">Company login</Link><Link href="/login/staff">Company staff login</Link><Link href="/login/partner">Partner login</Link><Link href="/portal?view=tracking">Project tracking <ArrowUpRight size={13}/></Link></nav>
-          <div className="sh-site-footer-help"><span className="sh-site-footer-help-icon"><MessageCircle size={22}/></span><h3>Let’s find your next step.</h3><p>Share your site details and questions with our company team.</p><Link href="/enquiry">Send an enquiry <ArrowRight size={16}/></Link></div>
-        </div>
-        <div className="sh-site-footer-bottom"><span>© {new Date().getFullYear()} Samerika Power Private Limited</span><span className="sh-site-footer-motto"><Sun size={14}/> A brighter tomorrow starts today.</span><a href="#home-content">Back to top <span><ArrowUpRight size={16}/></span></a></div>
-      </footer>
+
     </div>
     <div className="sh-mobile-cta"><Link href="/login" className="sh-button sh-outline">Sign in <ArrowUpRight size={16}/></Link><Link href="/enquiry" className="sh-button sh-primary">Enquire now <ArrowRight size={17}/></Link></div>
   </main>;
