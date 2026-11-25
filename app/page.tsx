@@ -88,7 +88,7 @@ export default function HomePage() {
     </section>
 
     <section className="sh-project-gallery" id="featured-projects" aria-labelledby="gallery-heading">
-      <div className="sh-project-gallery-heading"><div><span className="sh-eyebrow">EXPLORE OUR PROJECTS</span><h2 id="gallery-heading">Different spaces.<br/><em>Powered by solar.</em></h2></div><Link href="/projects" className="sh-button sh-outline">View all projects</Link></div>
+      <div className="sh-project-gallery-heading"><div><span className="sh-eyebrow">EXPLORE OUR PROJECTS</span><h2 id="gallery-heading">Different spaces.<br/><em>Powered by solar.</em></h2></div><Link href="/projects" className="sh-button sh-primary">View all projects</Link></div>
       <div className="sh-project-gallery-grid">
         {[
           {title:'Residential rooftops',label:'FOR YOUR HOME',image:'residential',anchor:'home',alt:'Illustrative family home with rooftop solar panels'},
