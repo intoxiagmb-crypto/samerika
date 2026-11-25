@@ -149,8 +149,6 @@ export default function HomePage() {
           {Icon:FileText,title:'Keep the details together',text:'Find installation milestones and project documents.'},
           {Icon:Users,title:'Stay in step with your team',text:'Follow the updates recorded by your company staff.'},
         ].map(({Icon,title,text},index)=><li key={title}><span className={`sh-project-feature-icon tone-${index}`}><Icon size={21} strokeWidth={1.7}/></span><div><h3>{title}</h3><p>{text}</p></div></li>)}</ul>
-        <Link href="/portal?view=tracking" className="sh-button sh-primary">Open project tracking <ArrowRight size={18}/></Link>
-        <p className="sh-project-signin"><ShieldCheck size={15}/> Sign in to view your project workspace.</p>
       </div>
       <figure className="sh-project-solar-image">
         <Image src="/images/projects/residential.webp" alt="Illustrative home with blue rooftop solar panels in a leafy neighbourhood" width={1200} height={800} sizes="(max-width: 700px) 88vw, 46vw"/>
