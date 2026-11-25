@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Check, Pencil, MapPin, Sun, FileCheck2, Info, RefreshCw, PauseCircle } from 'lucide-react';
+import { Check, Pencil, MapPin, Sun, FileCheck2, Info, RefreshCw, PauseCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { trackingSteps, legacyTrackingSteps } from '@/lib/application-tracking.mjs';
 
 type Row = Record<string, any>;
@@ -15,7 +15,7 @@ const stamp = (value: string) => new Date(value).toLocaleString('en-IN', { day: 
 const tone = (status: string) => status === 'Completed' ? 'done' : status === 'In Progress' ? 'active' : status === 'Hold / Rejected' ? 'held' : 'pending';
 
 export default function ApplicationTracker({ projects, role, selectedId, onSelect, onEditStep, onEditApplication, onDetails, onRefresh }: Props) {
-  const detailRef = useRef<HTMLDivElement>(null);
+  const timelineRef = useRef<HTMLDivElement>(null);
   const [stepId, setStepId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const project = projects.find(item => item.id === selectedId) || projects[0];
@@ -30,9 +30,9 @@ export default function ApplicationTracker({ projects, role, selectedId, onSelec
   const editable = ['ADMIN', 'SALES', 'MANAGER'].includes(role) && project.status !== 'Cancelled';
   const unlocked = steps.slice(0, selectedIndex).every((step: Row) => step.status === 'Completed');
   async function refresh() { setRefreshing(true); try { await onRefresh(); } finally { setRefreshing(false); } }
-  function chooseStep(id: string) {
-    setStepId(id);
-    if (window.matchMedia('(max-width: 900px)').matches) requestAnimationFrame(() => detailRef.current?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }));
+  function scrollTimeline(direction: number) {
+    const timeline = timelineRef.current;
+    if (timeline) timeline.scrollBy({ left: direction * Math.max(200, timeline.clientWidth * .75), behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
   }
 
   return <div className="application-tracker">
@@ -45,15 +45,16 @@ export default function ApplicationTracker({ projects, role, selectedId, onSelec
     <section className="tracking-journey" aria-labelledby="journey-title">
       <div className="tracking-section-heading"><div><span className="eyebrow">FROM SITE SURVEY TO SUBSIDY</span><h3 id="journey-title">Solar Project Workflow</h3><p>Nine steps. One clear record of your project.</p></div><div className="tracking-legend"><span><i className="completed"/>Completed</span><span><i className="in-progress"/>In Progress</span><span><i/>Pending</span><span><i className="held"/>Hold / Rejected</span></div></div>
       <div className="tracking-workflow-layout">
-        <div className="tracking-scroll"><ol className="tracking-steps">{steps.map((step: Row, index: number) => <li key={step.id} className={`is-${tone(step.status)} ${selected.id === step.id ? 'is-selected' : ''}`}>
-          <button onClick={() => chooseStep(step.id)} aria-pressed={selected.id === step.id} aria-label={`Step ${index + 1}: ${step.label}, ${step.status}`}>
+        <div className="tracking-timeline-controls"><span>Steps 1–9 · Scroll left or right to explore</span><div><button type="button" aria-label="Scroll to earlier steps" aria-controls="workflow-timeline" onClick={() => scrollTimeline(-1)}><ChevronLeft size={20}/></button><button type="button" aria-label="Scroll to later steps" aria-controls="workflow-timeline" onClick={() => scrollTimeline(1)}><ChevronRight size={20}/></button></div></div>
+        <div className="tracking-scroll" id="workflow-timeline" ref={timelineRef} role="region" aria-label="Solar project steps, horizontal timeline" tabIndex={0}><ol className="tracking-steps">{steps.map((step: Row, index: number) => <li key={step.id} className={`is-${tone(step.status)} ${selected.id === step.id ? 'is-selected' : ''}`}>
+          <button onClick={() => setStepId(step.id)} aria-pressed={selected.id === step.id} aria-label={`Step ${index + 1}: ${step.label}, ${step.status}`}>
             <span className="tracking-step-icon">{step.status === 'Completed' ? <Check size={21}/> : step.status === 'Hold / Rejected' ? <PauseCircle size={21}/> : index + 1}</span>
-            <span className="tracking-step-copy"><strong>{step.label}</strong><span lang="hi" className="tracking-hindi">{step.hindi}</span><span className="tracking-step-meta"><time dateTime={step.eventDate || undefined}>{step.eventDate ? date(step.eventDate) : 'Awaiting update'}</time>{step.updatedBy && <span> · {step.updatedBy}</span>}</span></span>
+            <span className="tracking-step-copy"><strong>{step.label}</strong><span lang="hi" className="tracking-hindi">{step.hindi}</span><span className="tracking-step-meta"><time dateTime={step.eventDate || undefined}>{step.eventDate ? date(step.eventDate) : 'Awaiting update'}</time>{step.updatedBy && <span>{step.updatedBy}</span>}</span></span>
             <span className={`tracking-status ${tone(step.status)}`}>{step.status}</span>
           </button>
         </li>)}</ol>{completed === steps.length && <div className="tracking-completed" role="status"><Check size={22}/><div><strong>Project Completed</strong><span>All nine workflow steps recorded as completed.</span></div></div>}</div>
 
-        <div ref={detailRef} className="tracking-stage-detail" aria-live="polite">
+        <div className="tracking-stage-detail" aria-live="polite">
           <div className="tracking-detail-title"><span className="tracking-detail-icon"><FileCheck2 size={24}/></span><div><span className="eyebrow">STEP {String(selectedIndex + 1).padStart(2, '0')} OF 09</span><h4>{selected.label}</h4></div></div>
           <span className={`tracking-status ${tone(selected.status)}`}>{selected.status}</span>
           <p lang="hi" className="tracking-detail-hindi">{selected.hindi}</p><p>{selected.hint}</p>
