@@ -1,0 +1,26 @@
+{
+  "generator": "Built-in image_gen",
+  "purpose": "Illustrative project-category images; not photographs of completed Samerika installations.",
+  "images": [
+    {
+      "file": "residential.webp",
+      "prompt": "Use case: photorealistic-natural. Create one landscape 3:2 architectural photograph-style concept image for a solar company's project category card. Scene: An Indian two-storey family house, cream plaster walls, small green garden and a flat rooftop with neatly aligned blue photovoltaic panels on metal mounting racks, identifiable whole home visible. Elevated three-quarter drone viewpoint, natural warm morning light, blue sky, realistic building materials, crisp solar panel geometry, calm professional composition, main building and solar panels centered with safe crop margins. No text, no logos, no watermarks, no borders, no collage, no identifiable people. This is an illustrative project type, not an actual documented installation."
+    },
+    {
+      "file": "society.webp",
+      "prompt": "Use case: photorealistic-natural. Create one landscape 3:2 architectural photograph-style concept image for a solar company's project category card. Scene: An Indian housing society of several mid-rise apartment buildings surrounding a landscaped shared courtyard, orderly photovoltaic arrays on multiple flat rooftops, clearly a residential community. Elevated three-quarter drone viewpoint, natural warm morning light, blue sky, realistic building materials, crisp solar panel geometry, calm professional composition, main building and solar panels centered with safe crop margins. No text, no logos, no watermarks, no borders, no collage, no identifiable people. This is an illustrative project type, not an actual documented installation."
+    },
+    {
+      "file": "commercial.webp",
+      "prompt": "Use case: photorealistic-natural. Create one landscape 3:2 architectural photograph-style concept image for a solar company's project category card. Scene: A contemporary three-storey Indian office and retail building, glass and concrete facade, a large visible flat roof carrying neat blue solar panel arrays, street-level landscaping, clearly a commercial workplace. Elevated three-quarter drone viewpoint, natural warm morning light, blue sky, realistic building materials, crisp solar panel geometry, calm professional composition, main building and solar panels centered with safe crop margins. No text, no logos, no watermarks, no borders, no collage, no identifiable people. This is an illustrative project type, not an actual documented installation."
+    },
+    {
+      "file": "industrial.webp",
+      "prompt": "Use case: photorealistic-natural. Create one landscape 3:2 architectural photograph-style concept image for a solar company's project category card. Scene: An Indian industrial factory and warehouse campus, broad corrugated metal shed roofs covered with regular blue photovoltaic arrays, service road and loading bays, clearly large-scale industrial premises, no smoke. Elevated three-quarter drone viewpoint, natural warm morning light, blue sky, realistic building materials, crisp solar panel geometry, calm professional composition, main building and solar panels centered with safe crop margins. No text, no logos, no watermarks, no borders, no collage, no identifiable people. This is an illustrative project type, not an actual documented installation."
+    },
+    {
+      "file": "school.webp",
+      "prompt": "Use case: photorealistic-natural. Create one landscape 3:2 architectural photograph-style concept image for a solar company's project category card. Scene: An Indian school campus with a low-rise L-shaped classroom building around a green playground and basketball court, rooftop blue solar panels visible on the school buildings, clearly an educational institution. Elevated three-quarter drone viewpoint, natural warm morning light, blue sky, realistic building materials, crisp solar panel geometry, calm professional composition, main building and solar panels centered with safe crop margins. No text, no logos, no watermarks, no borders, no collage, no identifiable people. This is an illustrative project type, not an actual documented installation."
+    }
+  ]
+}
