@@ -192,3 +192,10 @@
 
 /* Keep the expanded public navigation comfortable on smaller laptops. */
 @media(min-width:951px) and (max-width:1300px){.sh-navigation{display:none;position:absolute;left:0;right:0;top:100%;padding:20px 5%;background:white;box-shadow:0 20px 30px #092d6115;border-bottom:1px solid #dce7f3;flex-direction:column;align-items:stretch;gap:0}.sh-navigation.is-open{display:flex}.sh-navigation>a{font-size:14px;padding:13px 5px;border-bottom:1px solid #edf2f8}.sh-nav-login{border-left:0}.sh-header-cta{margin-left:auto}.sh-menu{display:grid;place-items:center;width:38px;height:44px;color:#092d61;flex-shrink:0}}
+
+/* Solar imagery alongside the project tracking introduction. */
+.sh-project-solar-image{position:relative;min-width:0;margin:0;overflow:hidden;border:1px solid #d9e4f2;border-radius:22px;background:#dce9f4;box-shadow:0 15px 40px #0c3c7010}
+.sh-project-solar-image>img{display:block;width:100%;height:auto;aspect-ratio:1/1;object-fit:cover;object-position:center}
+.sh-project-solar-image>figcaption{position:absolute;left:20px;bottom:20px;display:flex;align-items:center;gap:8px;max-width:calc(100% - 40px);padding:10px 14px;border:1px solid #ffffff80;border-radius:9px;background:#fffffff0;color:#244e39;font-size:12px;line-height:1.6}
+.sh-project-solar-image>figcaption>svg{flex-shrink:0}
+@media(max-width:700px){.sh-project-solar-image{border-radius:18px}.sh-project-solar-image>img{aspect-ratio:3/2}.sh-project-solar-image>figcaption{left:14px;bottom:14px;max-width:calc(100% - 28px);padding:8px 11px;font-size:11px}}

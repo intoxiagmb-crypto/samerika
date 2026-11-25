@@ -5,7 +5,7 @@ import PublicHeader from '@/components/public-header';
 import Image from 'next/image';
 import Link from 'next/link';
 import SolarPlanner from '@/components/solar-planner';
-import { ArrowRight, ArrowUpRight, Building2, Check, CheckCircle2, ClipboardCheck, FileText, House, Leaf, MessageCircle, Minus, PanelsTopLeft, Plus, ShieldCheck, Sun, Users, Clock3, Headphones, BriefcaseBusiness } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Building2, Check, CheckCircle2, ClipboardCheck, FileText, House, Leaf, MessageCircle, Minus, PanelsTopLeft, Plus, ShieldCheck, Sun, Users, Headphones, BriefcaseBusiness } from 'lucide-react';
 import './home.css';
 import './home-subsidy.css';
 import './home-highlights.css';
@@ -136,24 +136,10 @@ export default function HomePage() {
         <Link href="/portal?view=tracking" className="sh-button sh-primary">Open project tracking <ArrowRight size={18}/></Link>
         <p className="sh-project-signin"><ShieldCheck size={15}/> Sign in to view your project workspace.</p>
       </div>
-      <div className="sh-project-preview" role="group" aria-label="Illustrative application tracking preview">
-        <div className="sh-project-preview-top"><span><Sun size={17}/> MY SOLAR JOURNEY</span><span className="sh-project-example">Sample preview</span></div>
-        <div className="sh-project-overview">
-          <div><span className="sh-project-overline">APPLICATION OVERVIEW</span><h3>Every milestone.<br/>A little closer.</h3><p>2 of 10 stages completed</p></div>
-          <div className="sh-project-ring" role="progressbar" aria-label="Sample application stages completed" aria-valuenow={2} aria-valuemin={0} aria-valuemax={10} aria-valuetext="2 of 10 stages completed"><div><strong>20<span>%</span></strong><small>completed</small></div></div>
-        </div>
-        <div className="sh-project-counts"><div><span className="done"/><strong>02</strong><span>Completed</span></div><div><span className="active"/><strong>01</strong><span>In progress</span></div><div><span className="waiting"/><strong>07</strong><span>Pending</span></div></div>
-        <div className="sh-project-timeline"><div className="sh-project-timeline-title"><h4>Application milestones</h4><span>Showing 4 of 10</span></div>
-          <ol>{[
-            {label:'Registration',status:'Completed',detail:'Recorded by your team',state:'done'},
-            {label:'Application',status:'Completed',detail:'Recorded by your team',state:'done'},
-            {label:'Feasibility',status:'In progress',detail:'Current milestone with your team',state:'active'},
-            {label:'Vendor selection',status:'Pending',detail:'Awaiting an update',state:'waiting'},
-          ].map(({label,status,detail,state},index)=><li key={label} className={state}><span className="sh-project-node">{state==='done'?<Check size={15}/>:state==='active'?<Clock3 size={15}/>:<span>0{index+1}</span>}</span><div className="sh-project-milestone"><strong>{label}</strong><small>{detail}</small></div><span className="sh-project-status">{status}</span></li>)}</ol>
-          <p className="sh-project-remaining">+ 6 more stages in your project workspace</p>
-        </div>
-        <div className="sh-project-preview-note"><ShieldCheck size={15}/><p>Illustrative stages. Your workspace shows updates recorded by your company team.</p></div>
-      </div>
+      <figure className="sh-project-solar-image">
+        <Image src="/images/projects/residential.webp" alt="Illustrative home with blue rooftop solar panels in a leafy neighbourhood" width={1200} height={800} sizes="(max-width: 700px) 88vw, 46vw"/>
+        <figcaption><Leaf size={16} aria-hidden="true"/> Rooftop solar illustration</figcaption>
+      </figure>
     </section>
 
     <section className="sh-section sh-workspaces" id="portals" aria-labelledby="workspaces-heading">
