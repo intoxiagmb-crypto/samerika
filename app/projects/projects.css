@@ -5,3 +5,5 @@
 /* Category imagery, with matching proportions and lazy-loaded responsive sources. */
 .sp-grid .sp-card{padding:0;overflow:hidden;display:flex;flex-direction:column;align-items:stretch}.sp-card-image{position:relative;width:100%;aspect-ratio:3/2;flex-shrink:0;background:#e6eef8;overflow:hidden}.sp-card-image img{object-fit:cover;object-position:center}.sp-card-body{padding:27px 30px 30px;display:flex;flex-direction:column;align-items:flex-start;flex:1}.sp-card-body .sp-card-top{flex-direction:row;align-items:center;gap:13px;margin-bottom:16px}.sp-card-body .sp-icon{width:44px;height:44px;border-radius:13px;flex-shrink:0}.sp-card-body .sp-icon svg{width:25px;height:25px}.sp-card-body>p{font-size:16px;color:#526981;margin:14px 0 22px}.sp-gallery-note{font-size:14px;color:#526981;margin:-15px 0 28px}.sp-card-body .sp-card-link{margin-top:auto}
 @media(max-width:700px){.sp-card-body{padding:24px 26px 28px}.sp-gallery-note{margin:0 0 23px}}
+
+.sp-mill .sp-icon{background:#fff0d5;color:#a35c09}.sp-grid>.sp-next{grid-column:1/-1;align-items:center;text-align:center}.sp-grid>.sp-next p{max-width:650px}.sp-grid>.sp-next h3 br{display:none}

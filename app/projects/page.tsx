@@ -1,7 +1,7 @@
 import type {Metadata} from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import {Building2, Factory, GraduationCap, House, Leaf, Sun, ClipboardCheck, FileText, PanelsTopLeft} from 'lucide-react';
+import {Wheat, Building2, Factory, GraduationCap, House, Leaf, Sun, ClipboardCheck, FileText, PanelsTopLeft} from 'lucide-react';
 import Brand from '@/components/brand';
 import PublicHeader from '@/components/public-header';
 import '../home.css';
@@ -17,6 +17,7 @@ const categories = [
   {title: 'Housing societies', label: 'FOR YOUR COMMUNITY', icon: Building2, property: 'Residential', text: 'Bring shared energy requirements and project coordination together for your residential community.', details: ['Common-area energy requirements', 'Shared rooftop planning', 'Coordinated project documentation'], tone: 'community', image: '/images/projects/society.webp', alt: 'Illustrative housing society with solar panels on apartment rooftops'},
   {title: 'Commercial spaces', label: 'FOR YOUR BUSINESS', icon: PanelsTopLeft, property: 'Commercial', text: 'Explore a solar plan that works with your premises, operating hours and day-to-day power needs.', details: ['Site & electricity-use review', 'A quotation with a clear scope', 'Installation milestone coordination'], tone: 'business', image: '/images/projects/commercial.webp', alt: 'Illustrative commercial office building with rooftop solar panels'},
   {title: 'Industrial facilities', label: 'FOR YOUR OPERATIONS', icon: Factory, property: 'Industrial', text: 'Start with your facility’s load requirements and available space to discuss a suitable solar proposal.', details: ['Facility-specific requirements', 'Proposed capacity & equipment', 'Project planning & handover'], tone: 'industry', image: '/images/projects/industrial.webp', alt: 'Illustrative factory with solar panels across its warehouse roof'},
+  {title: 'Atta Chakki / Flour Mill', label: 'FOR YOUR FLOUR MILL', icon: Wheat, property: 'Industrial', text: 'Explore solar for your atta chakki or flour mill, with a proposal planned around your milling equipment, electricity use and working hours.', details: ['Motor load & operating-hour assessment', 'Available rooftop space review', 'Site-specific system & quotation'], tone: 'mill', image: '/images/projects/flour-mill.webp', alt: 'Illustrative Indian atta chakki flour mill with rooftop solar panels, a grain-grinding machine and wheat sacks'},
   {title: 'Schools & institutions', label: 'FOR SHARED SPACES', icon: GraduationCap, property: 'Commercial', text: 'Plan for the energy needs of learning spaces and institutional buildings with a site-led approach.', details: ['Building & usage assessment', 'Installation scope discussion', 'Documentation & ongoing support'], tone: 'institution', image: '/images/projects/school.webp', alt: 'Illustrative school campus with rooftop solar panels and a playground'},
 ];
 
