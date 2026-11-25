@@ -160,7 +160,7 @@ export default function HomePage() {
       <footer className="sh-site-footer">
         <div className="sh-site-footer-main">
           <div className="sh-site-footer-brand"><Brand/><p>Samerika Power Private Limited</p><span>Solar for your space.<br/> People to connect every step.</span><span className="sh-site-footer-tag"><Leaf size={15}/> Better energy. Better connected.</span></div>
-          <nav className="sh-site-footer-nav" aria-label="Explore solar footer navigation"><h3>Explore solar</h3><Link href="/about">About Us</Link><a href="#solutions">Our offerings</a><a href="#why-samerika">Why Samerika</a><a href="#how-it-works">How it works</a><a href="#faqs">FAQs & answers</a></nav>
+          <nav className="sh-site-footer-nav" aria-label="Explore solar footer navigation"><h3>Explore solar</h3><Link href="/about">About Us</Link><Link href="/projects">Projects</Link><a href="#solutions">Our offerings</a><a href="#why-samerika">Why Samerika</a><a href="#how-it-works">How it works</a><a href="#faqs">FAQs & answers</a></nav>
           <nav className="sh-site-footer-nav" aria-label="Workspace footer navigation"><h3>Your workspace</h3><Link href="/login/company">Company login</Link><Link href="/login/staff">Company staff login</Link><Link href="/login/agent">Agent login</Link><Link href="/portal?view=tracking">Project tracking <ArrowUpRight size={13}/></Link></nav>
           <div className="sh-site-footer-help"><span className="sh-site-footer-help-icon"><MessageCircle size={22}/></span><h3>Let’s find your next step.</h3><p>Share your site details and questions with our company team.</p><Link href="/enquiry">Send an enquiry <ArrowRight size={16}/></Link></div>
         </div>
