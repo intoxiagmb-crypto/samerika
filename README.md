@@ -39,6 +39,16 @@ Server uploads accept PDF, JPEG or PNG up to **4 MB**, leaving room for multipar
 
 Existing Cloudflare D1/R2 data is not automatically copied. This migration preserves the SQL schema and role/business rules, but an existing populated database or bucket requires a separate controlled data transfer. Do not point the initial schema migrations at an imported populated database without baselining its migration history. The previous `.openai/hosting.json` identity and legacy build helpers remain archived in the repository; Vercel does not use them or ChatGPT authentication headers.
 
+## Quotation printing and customer sharing
+
+- **Print / save A4 PDF** uses A4 portrait (210 × 297 mm), 12 mm margins, repeating item headings and flowing pages for long quotations. In the browser print dialog, turn off Headers and footers for a clean document. Shared customer quotations use the same printable document.
+- **Settings → Edit settings** is admin-only. Set the company GST-registered state, GSTIN where applicable and quotation terms before preparing quotes. All new quotations snapshot these terms server-side. Staff cannot override terms through the form or API, and changing settings does not rewrite saved quotations.
+- GST presentation is computed from the supplier state and the customer installation/site state. Matching states use CGST + SGST (CGST + UTGST for applicable union territories); different states use IGST. Known state abbreviations and older names are normalized. Missing/unknown states or conflicting GSTIN state codes block saving instead of guessing. Item rates still come from the catalogue; address does not determine the percentage. This implements the ordinary domestic installation workflow, not export, SEZ, or other special tax treatments.
+- After the admin approves and **Publish to customer** sets a quotation to Sent, authorized company staff or the assigned agent can use **Prepare WhatsApp quotation → Open customer WhatsApp**. The saved Indian mobile number is selected automatically. The message contains a customer view/print link; the operator reviews it and presses Send in WhatsApp. This is click-to-chat, not automated message delivery or an automatically attached PDF. No WhatsApp availability/delivery claim is made.
+- Customer links are bearer links: anyone holding the link can read that quotation without signing in. They expire after at most 30 days, capped at quotation validity (India time). The admin can **Revoke shared links**. Rejected/unpublished quotations stop resolving. Internal notes, account records and project history are excluded. Only token hashes are stored, in scoped entries of the existing settings table; no database migration is required. Pages are dynamic, no-store, noindex, and use no-referrer headers.
+
+Implementation references: [WhatsApp click-to-chat](https://faq.whatsapp.com/5913398998672934), [GST place of supply for installation](https://cbic-gst.gov.in/pdf/e-version-gst-fliers/eflier-IGST-23062017.pdf), [official state codes](https://docs.ewaybillgst.gov.in/apidocs/state-code.html).
+
 ## Local development
 
 Requires Node 22.13+ (22.x). With remote service variables unset:

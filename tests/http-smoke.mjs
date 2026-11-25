@@ -38,6 +38,7 @@ await action('staff','project.tracking',{id:project.id,version:trackProject.vers
 
 const companyLead=await action('company','lead.create',{name:'Demo · Company-only requirement',mobile:'8'+tag.slice(-9),email:`private-${tag}@solaris.demo`,address:'Demo company-only site',city:'Jaipur',state:'Rajasthan',pin:'302001',capacity:3,system:'On-grid',property:'Residential',finance:'Cash',remarks:'Local role-isolation verification fixture'});
 assert.equal((await snapshot('agent')).leads.some(l=>l.id===companyLead.id),false);
+await action('company','settings',{...(await snapshot('company')).settings,state:'Rajasthan',gstin:'',quotationTerms:'Local company-controlled terms'});
 // Customer-first quotation creation must work through the actual authenticated API.
 const item=await action('company','product.create',{name:'Demo · Quotation test item',brand:'Test',category:'Solar panel',capacity:1,price:100.25,taxRate:5,unit:'Pcs',hsn:'TEST',system:'On-grid',warranty:'Test fixture'});
 const quote=await action('company','quote.create',{customerId:companyLead.id,items:[{productId:item.id,quantity:2,unitPrice:1}],validUntil:'2099-12-31',terms:'Local verification fixture'});
@@ -45,6 +46,18 @@ const quoted=await snapshot('company');const savedQuote=quoted.records.find(r=>r
 assert.equal(savedQuote.amount,21053);assert.equal(savedQuote.data.items[0].unitPrice,10025);assert.equal(savedQuote.data.customerDetails.name,'Demo · Company-only requirement');
 assert.ok(quoted.projects.some(p=>p.id===savedQuote.project_id&&p.lead_id===companyLead.id));
 assert.equal((await snapshot('agent')).records.some(r=>r.id===quote.id),false);
+assert.equal(savedQuote.data.terms,'Local company-controlled terms');assert.equal(savedQuote.data.taxMode,'CGST_SGST');
+await action('staff','settings',{...quoted.settings,quotationTerms:'Unauthorized'},403);
+await action('company','quote.share',{id:quote.id},400);
+await action('company','record.update',{id:quote.id,status:'Approved'});
+await action('company','record.update',{id:quote.id,status:'Sent',note:'Internal-only QA approval note'});
+await action('agent','quote.share',{id:quote.id},403);
+const shared=await action('company','quote.share',{id:quote.id});
+const publicQuote=await fetch(origin+shared.path);assert.equal(publicQuote.status,200);
+assert.match(publicQuote.headers.get('cache-control'),/no-store/);assert.equal(publicQuote.headers.get('referrer-policy'),'no-referrer');assert.match(publicQuote.headers.get('x-robots-tag'),/noindex/);
+const quoteHtml=await publicQuote.text();assert.ok(quoteHtml.includes(quote.id));assert.ok(quoteHtml.includes('Print / save A4 PDF'));assert.ok(quoteHtml.includes('Local company-controlled terms'));assert.ok(!quoteHtml.includes('Internal-only QA approval note'));
+await action('company','quote.share.revoke',{id:quote.id});assert.match(await(await fetch(origin+shared.path)).text(),/Quotation link unavailable/);
+
 const enquiryValues={name:'Demo · Public enquiry',mobile:'7'+tag.slice(-9),email:`enquiry-${tag}@solaris.demo`,city:'Jaipur',pin:'302001',property:'Residential',remarks:'Local public enquiry verification'};
 const publicHeaders={Origin:origin,'Content-Type':'application/json'};
 const submitEnquiry=values=>fetch(origin+'/api/enquiries',{method:'POST',headers:publicHeaders,body:JSON.stringify(values)});

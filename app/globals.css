@@ -45,3 +45,19 @@ body{color:var(--text)}em{color:#556f5c}.eyebrow{color:#596e5e;font-size:10px;le
 
 /* Account provisioning and one-time credential handoff. */
 .credential-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}.account-password-field>label{font-size:14px;font-weight:600}.account-password-field>small{font-size:14px;line-height:1.5}.credential-receipt dl{display:grid;gap:8px;margin:24px 0;font-size:16px}.credential-receipt dt{font-weight:600;margin-top:8px}.credential-receipt dd{margin:0;overflow-wrap:anywhere}.credential-receipt a{color:#084293;text-decoration:underline}.credential-receipt code{font-size:16px}.credential-receipt [role=status]{font-size:14px;margin-top:18px}.credential-actions .button{min-height:44px}
+
+.quotation-readonly{display:block;padding:12px;border:1px solid #d6dfea;border-radius:8px;background:#f4f7fb;color:#263247;font-size:14px;line-height:1.6}.quotation-tax-note{font-size:14px;margin:16px 0}.quotation-actions{padding:18px 0;font-size:14px;line-height:1.6}.quotation-actions p{margin:12px 0}.quotation-share-ready{border:1px solid #cad8e8;padding:16px;border-radius:10px;margin-top:16px;background:#f6f9fd}.quotation-share-ready input{width:100%;padding:10px;font-size:14px;margin-top:12px;border:1px solid #cad8e8;border-radius:6px}.quotation-share-page{max-width:210mm;margin:24px auto;padding:20px}.quotation-share-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px}.quotation-share-toolbar h1{font-size:24px}.quotation-share-toolbar p{font-size:14px;margin-top:8px}.quotation-share-page .quotation-paper{min-width:0}.quotation-paper td p,.quotation-paper td strong{max-width:none;overflow:visible;text-overflow:clip;white-space:normal}.quotation-paper .quotation-items td p.preserve-lines{white-space:pre-wrap}
+@media(max-width:700px){.quotation-share-page{padding:12px;margin:0}.quotation-share-toolbar{align-items:flex-start;flex-direction:column}.quotation-actions .button{font-size:14px}}
+@media print{
+ @page{size:210mm 297mm;margin:12mm}
+ html,body{width:auto!important;height:auto!important;overflow:visible!important}
+ .quotation-actions,.quotation-share-toolbar,.quotation-print-button{display:none!important}
+ .quotation-share-page{width:auto!important;max-width:none!important;margin:0!important;padding:0!important}
+ .quotation-paper{width:100%!important;max-width:186mm!important;margin:0!important;box-sizing:border-box;overflow:visible!important}
+ .quotation-paper .quotation-table-scroll{overflow:visible!important}
+ .quotation-paper table{width:100%!important;min-width:0!important}
+ .quotation-paper tr{break-inside:avoid}
+ .quotation-paper td{overflow:visible!important;text-overflow:clip!important}
+ .quotation-paper .quotation-bottom{break-inside:auto}
+ .quotation-paper .quotation-totals{break-inside:avoid}
+}

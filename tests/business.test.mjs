@@ -9,7 +9,7 @@ import { DEFAULT_SETTINGS,quoteTotal } from '../lib/policy.mjs';
 const clients=[];
 after(()=>{for(const client of clients)client.close();});
 async function database(){const client=createClient({url:':memory:'});clients.push(client);await migrate(client);return adaptDatabase(client);}
-async function setup(){const db=await database(),s=new Business(db);const users={};for(const role of ['ADMIN','PARTNER','SALES','CUSTOMER','MANAGER','TECHNICAL','VERIFIER','FINANCE']){const identity={userId:role.toLowerCase(),email:`${role.toLowerCase()}@example.test`,displayName:role};let u=await s.user(identity,role==='PARTNER'?'PARTNER':undefined);if(role!=='ADMIN'){if(role==='PARTNER'){const kyc=await s.upload(u,{projectId:'',documentType:'Partner KYC',name:'business.pdf',mime:'application/pdf',size:100,key:'kyc-test'});await s.act(users.ADMIN,'record.update',{id:kyc,status:'Verified',note:'Business verified'});}await s.act(users.ADMIN,'user.update',{id:u.id,role,status:'Active'});u=await s.user(identity);}users[role]=u;}return {db,s,u:users};}
+async function setup(){const db=await database(),s=new Business(db);const users={};for(const role of ['ADMIN','PARTNER','SALES','CUSTOMER','MANAGER','TECHNICAL','VERIFIER','FINANCE']){const identity={userId:role.toLowerCase(),email:`${role.toLowerCase()}@example.test`,displayName:role};let u=await s.user(identity,role==='PARTNER'?'PARTNER':undefined);if(role!=='ADMIN'){if(role==='PARTNER'){const kyc=await s.upload(u,{projectId:'',documentType:'Partner KYC',name:'business.pdf',mime:'application/pdf',size:100,key:'kyc-test'});await s.act(users.ADMIN,'record.update',{id:kyc,status:'Verified',note:'Business verified'});}await s.act(users.ADMIN,'user.update',{id:u.id,role,status:'Active'});u=await s.user(identity);}users[role]=u;}await s.act(users.ADMIN,'settings',{...DEFAULT_SETTINGS,state:'Rajasthan',quotationTerms:'Company-approved terms'});return {db,s,u:users};}
 const lead={name:'Test Customer',email:'customer@example.test',mobile:'9876543210',address:'12 Test Lane',city:'Jaipur',state:'Rajasthan',pin:'302001',capacity:3,system:'On-grid',property:'Residential',finance:'Finance',remarks:'Test installation'};
 async function createProject(s,u){const leadId=await s.act(u.PARTNER,'lead.create',lead);await s.act(u.ADMIN,'lead.update',{id:leadId,status:'Assigned',assignedTo:u.SALES.id});await s.act(u.SALES,'lead.update',{id:leadId,status:'Contacted',note:'Confirmed interest',followUp:'2099-01-01'});const projectId=await s.act(u.SALES,'project.create',{leadId});await s.act(u.ADMIN,'project.update',{id:projectId,assignment:{managerId:u.MANAGER.id,technicianId:u.TECHNICAL.id,verifierId:u.VERIFIER.id}});return {leadId,projectId};}
 async function completeProject(s,u,projectId){
@@ -168,4 +168,50 @@ test('application tracking persists staff updates, protects roles and rejects st
  p=await s.one('SELECT * FROM projects WHERE id=?',projectId);assert.equal(p.status,'Completed');
  await s.run("UPDATE projects SET status='Cancelled' WHERE id=?",projectId);
  await assert.rejects(s.act(u.ADMIN,'project.tracking',{id:projectId,version:p.version,applicationNumber:'CANCELLED'}),/read-only/);
+});
+
+test('quotation terms and GST are computed server-side, resisting staff and admin payload overrides',async()=>{
+ const {s,u}=await setup();const {projectId}=await createProject(s,u);
+ const productId=await s.act(u.ADMIN,'product.create',{name:'Panel',brand:'Test',category:'Solar panel',capacity:1,price:100,taxRate:5,system:'On-grid',warranty:'Test'});
+ const values={projectId,items:[{productId,quantity:1}],validUntil:'2099-12-31',terms:'Injected staff terms',taxMode:'IGST'};
+ const id=await s.act(u.SALES,'quote.create',values);
+ const q=await s.one('SELECT * FROM records WHERE id=?',id);
+ assert.equal(q.data.terms,'Company-approved terms');assert.equal(q.data.taxMode,'CGST_SGST');assert.equal(q.data.placeOfSupply,'Rajasthan');
+ await assert.rejects(s.act(u.SALES,'settings',{...DEFAULT_SETTINGS,quotationTerms:'Tampered'}),/permission/);
+ await assert.rejects(s.act(u.PARTNER,'quote.create',values),/permission/);
+ await s.act(u.ADMIN,'settings',{...DEFAULT_SETTINGS,state:'Odisha',quotationTerms:'Updated admin terms'});
+ const next=await s.act(u.ADMIN,'quote.create',{...values,terms:'Per-quote override',taxMode:'CGST_SGST'});
+ const nextQuote=await s.one('SELECT * FROM records WHERE id=?',next);
+ assert.equal(nextQuote.data.terms,'Updated admin terms');assert.equal(nextQuote.data.taxMode,'IGST');
+ assert.equal((await s.one('SELECT * FROM records WHERE id=?',id)).data.terms,'Company-approved terms');
+ await s.act(u.ADMIN,'settings',{...DEFAULT_SETTINGS,state:''});
+ await assert.rejects(s.act(u.ADMIN,'quote.create',values),/company state/);
+});
+
+test('quotation links require publication and project access, omit internal fields, expire and revoke',async()=>{
+ const {createQuotationShare,getSharedQuotation,revokeQuotationShares}=await import('../lib/quotation-sharing.mjs');
+ const {db,s,u}=await setup();const {projectId}=await createProject(s,u);
+ const productId=await s.act(u.ADMIN,'product.create',{name:'Panel',brand:'Test',category:'Solar panel',capacity:1,price:100,taxRate:5,system:'On-grid',warranty:'Test'});
+ const id=await s.act(u.SALES,'quote.create',{projectId,items:[{productId,quantity:1}],validUntil:'2099-12-31'});
+ await assert.rejects(createQuotationShare(db,u.SALES,id),/approve and publish/);
+ await s.act(u.ADMIN,'record.update',{id,status:'Approved'});
+ await assert.rejects(createQuotationShare(db,u.ADMIN,id),/approve and publish/);
+ await s.act(u.ADMIN,'record.update',{id,status:'Sent',note:'Private approval note'});
+ const stranger={...u.SALES,id:'unassigned-sales'};
+ await assert.rejects(createQuotationShare(db,stranger,id),/not assigned/);
+ await assert.rejects(createQuotationShare(db,u.CUSTOMER,id),/permission/);
+ const now=Date.now();const share=await createQuotationShare(db,u.SALES,id,now);const token=share.path.split('/').pop();
+ const publicQuote=await getSharedQuotation(db,token,now);
+ assert.equal(publicQuote.id,id);assert.equal(publicQuote.data.terms,'Company-approved terms');
+ assert.equal(publicQuote.project_id,undefined);assert.equal(publicQuote.owner_id,undefined);assert.equal(publicQuote.data.remarks,undefined);
+ assert.equal(JSON.stringify(publicQuote).includes('Private approval note'),false);
+ assert.equal(JSON.stringify((await s.all('SELECT * FROM settings'))).includes(token),false);
+ assert.equal(await getSharedQuotation(db,token,share.expiresAt),null);
+ assert.equal(await getSharedQuotation(db,'a'.repeat(64)),null);
+ assert.equal(await getSharedQuotation(db,'malformed'),null);
+ await assert.rejects(revokeQuotationShares(db,u.SALES,id),/permission/);
+ await revokeQuotationShares(db,u.ADMIN,id);assert.equal(await getSharedQuotation(db,token),null);
+ const second=await createQuotationShare(db,u.PARTNER,id);
+ await s.act(u.CUSTOMER,'record.update',{id,status:'Rejected',note:'Needs revision'});
+ assert.equal(await getSharedQuotation(db,second.path.split('/').pop()),null);
 });
