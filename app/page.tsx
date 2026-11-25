@@ -7,6 +7,7 @@ import Link from 'next/link';
 import SolarPlanner from '@/components/solar-planner';
 import { ArrowRight, ArrowUpRight, Building2, Check, CheckCircle2, ClipboardCheck, FileText, House, Leaf, MessageCircle, Minus, PanelsTopLeft, Plus, ShieldCheck, Sun, Users, Clock3, Headphones, BriefcaseBusiness } from 'lucide-react';
 import './home.css';
+import './home-subsidy.css';
 
 const offerings = [
   { title: 'Homes', icon: House, property: 'Residential', description: 'Make room for clean energy on the roof you already have.', note: 'For your everyday energy', className: 'home', category: 'Residential', features: ['Rooftop assessment', 'Personalised quotation'], cta: 'Explore home solar' },
@@ -26,7 +27,7 @@ const journey = [
   { title: 'Stay connected, beyond setup', text: 'Keep handover documents together, follow recorded milestones and reach out for support.', icon: Headphones, label: 'Handover & support', detail: 'Your team stays within reach.' },
 ];
 const faqs = [
-  ['How do I get started with Samerika Power?', 'Send an enquiry with your name, mobile number, email and site location. Our company staff will contact you to understand your requirements and discuss the next steps. You do not need an account to enquire.'],
+  ['How do I get started with Samerika Power?', 'Send an enquiry with your name, mobile number and city. Our company staff will contact you to understand your requirements and discuss the next steps. You do not need an account to enquire.'],
   ['Which solar system is right for my property?', 'The right system depends on your electricity use, available rooftop space and site conditions. Share your requirement first; the team confirms the design and capacity after assessing your site.'],
   ['What will my solar quotation include?', 'Your quotation can include the selected panels, inverter, accessories and services, along with quantities, applicable taxes, pricing and terms. Review the proposed scope with the team before proceeding.'],
   ['Can I track my application and installation?', 'Yes. Your project workspace shows the milestones recorded by the company team. Application stages and installation progress are tracked separately, with status dates and references where available. Government application updates are recorded manually.'],
@@ -45,6 +46,23 @@ export default function HomePage() {
       <div className="sh-hero-shade"/>
       <div className="sh-hero-content"><span className="sh-eyebrow"><span/> SOLAR POWER. EVERYDAY POSSIBILITIES.</span><h1 id="home-title">A brighter future.<br/>Starts on <span>your roof.</span></h1><p>Make your move to solar with a team that connects every step—from your first enquiry to installation.</p><div className="sh-hero-actions"><Link href="/enquiry" className="sh-button sh-primary">Let’s talk solar <ArrowRight size={19}/></Link><a href="#solutions" className="sh-hero-link">Explore our solutions <ArrowUpRight size={18}/></a></div><div className="sh-hero-promise"><ShieldCheck size={19}/><span>Your rooftop. Your requirements. A plan built around you.</span></div></div>
       <div className="sh-hero-bottom"><span><ClipboardCheck size={19}/> Site-led planning</span><span><FileText size={19}/> Clear quotations</span><span><CheckCircle2 size={19}/> Connected project tracking</span></div>
+    </section>
+
+    <section className="sh-subsidy" id="solar-subsidy" aria-labelledby="subsidy-heading">
+      <div className="sh-subsidy-card">
+        <div className="sh-subsidy-copy">
+          <span className="sh-subsidy-label"><Sun size={20} aria-hidden="true"/> GOVERNMENT SOLAR PROGRAM</span>
+          <h2 id="subsidy-heading">PM Surya Ghar <span>Muft Bijli Yojana</span></h2>
+          <p>Turn your rooftop into solar savings with subsidy support for eligible homes in Uttar Pradesh.</p>
+          <div className="sh-subsidy-actions"><Link href="/programs" className="sh-button sh-primary">View subsidy details</Link><Link href="/enquiry?property=Residential&program=pm-surya-ghar">Enquire with Samerika</Link></div>
+        </div>
+        <div className="sh-subsidy-amount">
+          <span>COMBINED SUBSIDY IN UTTAR PRADESH</span>
+          <strong><small>Up to</small> ₹1,08,000</strong>
+          <p>Central up to ₹78,000 <span aria-hidden="true">+</span> UP up to ₹30,000</p>
+          <div className="sh-subsidy-condition"><ShieldCheck size={17} aria-hidden="true"/><span>For eligible residential installations of 3 kW or more. Subject to scheme rules and government approval.</span></div>
+        </div>
+      </div>
     </section>
 
     <section className="sh-section sh-solutions" id="solutions" aria-labelledby="solutions-heading">
