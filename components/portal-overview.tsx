@@ -36,7 +36,7 @@ export default function PortalOverview({ data, onNavigate, onCreate, onDetail }:
       <section className="welcome-card">
         <SolarLandscape className="welcome-landscape"/>
         <div className="welcome-copy">
-          <span className="welcome-kicker">{agent ? 'YOUR AGENT WORKSPACE' : data.user.role === 'CUSTOMER' ? 'YOUR SOLAR WORKSPACE' : 'YOUR COMPANY WORKSPACE'}</span>
+          <span className="welcome-kicker">{agent ? 'YOUR PARTNER WORKSPACE' : data.user.role === 'CUSTOMER' ? 'YOUR SOLAR WORKSPACE' : 'YOUR COMPANY WORKSPACE'}</span>
           <h2>Hello, {data.user.name.split(' ')[0].split('@')[0]} <span className="hello-sun">✦</span></h2>
           <p>{newLeads.length ? <><strong>{newLeads.length} new {newLeads.length === 1 ? 'enquiry' : 'enquiries'}</strong> and <strong>{active.length} active projects.</strong><br/>Small steps. A brighter tomorrow.</> : <>Your next solar opportunity starts here.<br/>Keep every customer and project connected.</>}</p>
           <button className="welcome-link" onClick={() => onNavigate(newLeads.length ? 'leads' : 'projects')}>Review {newLeads.length ? 'enquiries' : 'projects'} <ArrowUpRight size={14}/></button>

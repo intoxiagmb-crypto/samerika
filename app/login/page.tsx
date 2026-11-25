@@ -4,7 +4,7 @@ import { Users, Building2, BriefcaseBusiness, ArrowRight, ArrowLeft, ShieldCheck
 const portals = [
   { href: '/login/company', title: 'Company login', label: 'FOR OWNERS & ADMINISTRATORS', icon: Building2, description: 'Manage your company, create staff accounts, assign leads and oversee projects and payments.' },
   { href: '/login/staff', title: 'Company staff login', label: 'FOR YOUR COMPANY TEAM', icon: BriefcaseBusiness, description: 'Follow up on enquiries, prepare quotations and manage the work assigned to your staff role.' },
-  { href: '/login/agent', title: 'Agent login', label: 'FOR CHANNEL PARTNERS', icon: Users, description: 'Submit customer requirements, follow your installations and track your approved earnings.' },
+  { href: '/login/partner', title: 'Partner login', label: 'FOR CHANNEL PARTNERS', icon: Users, description: 'Submit customer requirements, follow your installations and track your approved earnings.' },
 ];
 
 export default function LoginChooser() {

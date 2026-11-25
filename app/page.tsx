@@ -32,7 +32,7 @@ const faqs = [
   ['What will my solar quotation include?', 'Your quotation can include the selected panels, inverter, accessories and services, along with quantities, applicable taxes, pricing and terms. Review the proposed scope with the team before proceeding.'],
   ['Can I track my application and installation?', 'Yes. Your project workspace shows the milestones recorded by the company team. Application stages and installation progress are tracked separately, with status dates and references where available. Government application updates are recorded manually.'],
   ['Will a subsidy apply to my project?', 'Ask the company team to check the requirements that apply to your property and application. Eligibility, approval and disbursal must be confirmed through the relevant process; submitting an enquiry does not guarantee a subsidy.'],
-  ['Which login should I choose?', 'Company owners and administrators use Company login. Employees use Company Staff login. Channel partners use Agent login to follow their own referrals, projects and approved earnings.'],
+  ['Which login should I choose?', 'Company owners and administrators use Company login. Employees use Company Staff login. Channel partners use Partner login to follow their own referrals, projects and approved earnings.'],
 ];
 
 export default function HomePage() {
@@ -132,7 +132,7 @@ export default function HomePage() {
       <div className="sh-workspaces-grid">{[
         {title:'Company login',role:'Owners & administrators',text:'Keep your company, team and solar projects moving together.',features:['Business overview','Team management'],cta:'Open company login',href:'/login/company',Icon:Building2,tone:'company',label:'MANAGE & GROW'},
         {title:'Company staff login',role:'Company employees',text:'Follow up on enquiries and manage the work assigned to your role.',features:['Enquiries & follow-ups','Project coordination'],cta:'Open staff login',href:'/login/staff',Icon:BriefcaseBusiness,tone:'staff',label:'ORGANISE & DELIVER'},
-        {title:'Agent login',role:'Channel partners & agents',text:'Stay connected to your referrals, projects and approved earnings.',features:['Your referrals','Approved earnings'],cta:'Open agent login',href:'/login/agent',Icon:Users,tone:'agent',label:'REFER & CONNECT'},
+        {title:'Partner login',role:'Channel partners',text:'Stay connected to your referrals, projects and approved earnings.',features:['Your referrals','Approved earnings'],cta:'Open partner login',href:'/login/partner',Icon:Users,tone:'agent',label:'REFER & CONNECT'},
       ].map(({title,role,text,features,cta,href,Icon,tone,label})=><Link key={href} href={href} className={`sh-workspace-card ${tone}`} aria-label={cta}>
         <div className="sh-workspace-top"><span className="sh-workspace-icon"><Icon size={27} strokeWidth={1.7}/></span><span className="sh-workspace-label">{label}</span></div>
         <div className="sh-workspace-body"><span className="sh-workspace-role">{role}</span><h3>{title}</h3><p>{text}</p><ul>{features.map(feature=><li key={feature}><Check size={13}/>{feature}</li>)}</ul></div>
@@ -161,7 +161,7 @@ export default function HomePage() {
         <div className="sh-site-footer-main">
           <div className="sh-site-footer-brand"><Brand/><p>Samerika Power Private Limited</p><span>Solar for your space.<br/> People to connect every step.</span><span className="sh-site-footer-tag"><Leaf size={15}/> Better energy. Better connected.</span></div>
           <nav className="sh-site-footer-nav" aria-label="Explore solar footer navigation"><h3>Explore solar</h3><Link href="/about">About Us</Link><Link href="/projects">Projects</Link><a href="#solutions">Our offerings</a><a href="#why-samerika">Why Samerika</a><a href="#how-it-works">How it works</a><a href="#faqs">FAQs & answers</a></nav>
-          <nav className="sh-site-footer-nav" aria-label="Workspace footer navigation"><h3>Your workspace</h3><Link href="/login/company">Company login</Link><Link href="/login/staff">Company staff login</Link><Link href="/login/agent">Agent login</Link><Link href="/portal?view=tracking">Project tracking <ArrowUpRight size={13}/></Link></nav>
+          <nav className="sh-site-footer-nav" aria-label="Workspace footer navigation"><h3>Your workspace</h3><Link href="/login/company">Company login</Link><Link href="/login/staff">Company staff login</Link><Link href="/login/partner">Partner login</Link><Link href="/portal?view=tracking">Project tracking <ArrowUpRight size={13}/></Link></nav>
           <div className="sh-site-footer-help"><span className="sh-site-footer-help-icon"><MessageCircle size={22}/></span><h3>Let’s find your next step.</h3><p>Share your site details and questions with our company team.</p><Link href="/enquiry">Send an enquiry <ArrowRight size={16}/></Link></div>
         </div>
         <div className="sh-site-footer-bottom"><span>© {new Date().getFullYear()} Samerika Power Private Limited</span><span className="sh-site-footer-motto"><Sun size={14}/> A brighter tomorrow starts today.</span><a href="#home-content">Back to top <span><ArrowUpRight size={16}/></span></a></div>

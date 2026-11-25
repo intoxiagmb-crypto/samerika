@@ -41,7 +41,7 @@ test('generated credentials support every employee role and cannot grant staff a
       assert.equal(audit.includes(password), false);
     }
     assert.equal(accountLoginPath('ADMIN'), '/login/company');
-    assert.equal(accountLoginPath('PARTNER'), '/login/agent');
+    assert.equal(accountLoginPath('PARTNER'), '/login/partner');
     assert.equal(accountLoginPath('CUSTOMER'), '/login/customer');
   } finally { client.close(); }
 });

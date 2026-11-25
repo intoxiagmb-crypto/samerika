@@ -40,7 +40,7 @@ export function AccountCredentialsDialog({ account, onClose }: { account: Accoun
     <span className="eyebrow">ACCOUNT SAVED</span><h2 id="credentials-title">Share account access</h2>
     <p>Copy these credentials before closing. The password cannot be viewed again after this dialog closes.</p>
     <dl><dt>Name</dt><dd>{account.name}</dd><dt>Sign-in link</dt><dd><a href={loginUrl} target="_blank" rel="noopener noreferrer">{loginUrl}</a></dd><dt>Email</dt><dd>{account.email}</dd><dt>Password</dt><dd><code>{visible ? account.password : '••••••••••••••••'}</code></dd></dl>
-    {account.role === 'PARTNER' && <p>The agent must complete KYC and receive company approval before submitting leads.</p>}
+    {account.role === 'PARTNER' && <p>The partner must complete KYC and receive company approval before submitting leads.</p>}
     <div className="credential-actions"><button className="button button-secondary" aria-pressed={visible} onClick={() => setVisible(!visible)}>{visible ? <EyeOff size={15} /> : <Eye size={15} />}{visible ? 'Hide password' : 'Show password'}</button><button className="button button-glow" onClick={copy}><Copy size={15} /> Copy login details</button><button className="button button-secondary" onClick={onClose}>Done</button></div>
     <p role="status">{message || 'Share privately. Do not post passwords in a public group.'}</p>
   </section></div>;
