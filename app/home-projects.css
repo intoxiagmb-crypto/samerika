@@ -1,0 +1,19 @@
+.sh-project-gallery{padding:45px max(6%,calc((100vw - 1280px)/2)) 42px;background:#fff;border-top:1px solid #e7eef6}
+.sh-project-gallery-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:25px;margin-bottom:27px}
+.sh-project-gallery-heading h2{font-size:clamp(29px,3vw,40px);line-height:1.22;letter-spacing:-1px;font-weight:650;color:#092d61;margin:12px 0 0}
+.sh-project-gallery-heading h2 em{font-style:normal;color:#a75200}
+.sh-project-gallery-heading>.sh-button{flex-shrink:0;min-height:44px}
+.sh-project-gallery-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px}
+.sh-project-gallery-card{display:block;min-width:0;border:1px solid #dce6f1;border-radius:16px;overflow:hidden;background:#fff;transition:border-color .18s,box-shadow .18s}
+.sh-project-gallery-card:hover{border-color:#a3bfdf;box-shadow:0 9px 25px #092d6110}
+.sh-project-gallery-image{position:relative;aspect-ratio:16/10;background:#e6eff8}
+.sh-project-gallery-image img{object-fit:cover}
+.sh-project-gallery-caption{padding:19px 21px 20px}
+.sh-project-gallery-caption>span:first-child{font-size:11px;line-height:1.6;letter-spacing:1px;color:#627c98;font-weight:600}
+.sh-project-gallery-caption h3{font-size:22px;line-height:1.35;letter-spacing:-.4px;color:#123b69;margin:8px 0 13px;font-weight:600}
+.sh-project-gallery-link{display:inline-block;color:#0054a2;font-size:14px;line-height:1.6;text-decoration:underline;text-underline-offset:4px}
+.sh-project-gallery-note{display:flex;justify-content:space-between;gap:15px;margin:16px 0 0;color:#637991;font-size:12px;line-height:1.7}
+.sh-project-gallery-note>span{display:none}
+.sh-project-gallery a:focus-visible{outline:3px solid #0073c8;outline-offset:3px}
+@media(max-width:1050px){.sh-project-gallery-grid{gap:17px}.sh-project-gallery-caption{padding:17px}.sh-project-gallery-caption h3{font-size:20px}}
+@media(max-width:700px){.sh-project-gallery{padding:34px 6% 30px}.sh-project-gallery-heading{align-items:flex-start;flex-direction:column;gap:18px;margin-bottom:22px}.sh-project-gallery-heading h2{font-size:31px}.sh-project-gallery-heading>.sh-button{font-size:13px;padding:11px 17px}.sh-project-gallery-grid{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:84%;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding:4px;gap:15px;padding:4px 4px 12px;margin:-4px -4px 0}.sh-project-gallery-card{scroll-snap-align:start;border-radius:14px}.sh-project-gallery-caption{padding:18px}.sh-project-gallery-caption h3{font-size:21px}.sh-project-gallery-note{font-size:11px;margin-top:12px}.sh-project-gallery-note>span{display:inline;white-space:nowrap;color:#21548b}}

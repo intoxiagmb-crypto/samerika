@@ -9,6 +9,7 @@ import { ArrowRight, ArrowUpRight, Building2, Check, CheckCircle2, ClipboardChec
 import './home.css';
 import './home-subsidy.css';
 import './home-highlights.css';
+import './home-projects.css';
 
 const offerings = [
   { title: 'Homes', icon: House, property: 'Residential', description: 'Make room for clean energy on the roof you already have.', note: 'For your everyday energy', className: 'home', category: 'Residential', features: ['Rooftop assessment', 'Personalised quotation'], cta: 'Explore home solar' },
@@ -84,6 +85,21 @@ export default function HomePage() {
         <div className="sh-solution-body"><span className="sh-solution-note">{note}</span><h3>{title}</h3><p>{description}</p><ul>{features.map(feature=><li key={feature}><Check size={14}/>{feature}</li>)}</ul><div className="sh-solution-cta"><span>{cta}</span><span className="sh-solution-arrow"><ArrowUpRight size={19}/></span></div></div>
       </Link>)}</div>
       <p className="sh-solutions-help"><MessageCircle size={16}/> Not sure where to start? <Link href="/enquiry">Talk to our solar team <ArrowRight size={14}/></Link></p>
+    </section>
+
+    <section className="sh-project-gallery" id="featured-projects" aria-labelledby="gallery-heading">
+      <div className="sh-project-gallery-heading"><div><span className="sh-eyebrow">EXPLORE OUR PROJECTS</span><h2 id="gallery-heading">Different spaces.<br/><em>Powered by solar.</em></h2></div><Link href="/projects" className="sh-button sh-outline">View all projects</Link></div>
+      <div className="sh-project-gallery-grid">
+        {[
+          {title:'Residential rooftops',label:'FOR YOUR HOME',image:'residential',anchor:'home',alt:'Illustrative family home with rooftop solar panels'},
+          {title:'Commercial spaces',label:'FOR YOUR BUSINESS',image:'commercial',anchor:'business',alt:'Illustrative office building with rooftop solar panels'},
+          {title:'Atta Chakki / Flour Mill',label:'FOR YOUR FLOUR MILL',image:'flour-mill',anchor:'mill',alt:'Illustrative atta chakki with solar panels on its roof'},
+        ].map(project => <Link href={`/projects#project-${project.anchor}`} className="sh-project-gallery-card" key={project.image}>
+          <div className="sh-project-gallery-image"><Image src={`/images/projects/${project.image}.webp`} alt={project.alt} fill sizes="(max-width: 700px) 75vw, 30vw"/></div>
+          <div className="sh-project-gallery-caption"><span>{project.label}</span><h3>{project.title}</h3><span className="sh-project-gallery-link">Explore this project type</span></div>
+        </Link>)}
+      </div>
+      <p className="sh-project-gallery-note">Illustrative solar project concepts.<span>Swipe to explore</span></p>
     </section>
 
     <section className="sh-section sh-care" id="why-samerika" aria-labelledby="care-heading"><div className="sh-care-layout">
