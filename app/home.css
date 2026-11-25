@@ -164,4 +164,4 @@
 .sh-project-solar-image>img{display:block;width:100%;height:auto;aspect-ratio:1/1;object-fit:cover;object-position:center}
 .sh-project-solar-image>figcaption{position:absolute;left:20px;bottom:20px;display:flex;align-items:center;gap:8px;max-width:calc(100% - 40px);padding:10px 14px;border:1px solid #ffffff80;border-radius:9px;background:#fffffff0;color:#244e39;font-size:12px;line-height:1.6}
 .sh-project-solar-image>figcaption>svg{flex-shrink:0}
-@media(max-width:700px){.sh-project-solar-image{border-radius:18px}.sh-project-solar-image>img{aspect-ratio:3/2}.sh-project-solar-image>figcaption{left:14px;bottom:14px;max-width:calc(100% - 28px);padding:8px 11px;font-size:11px}}
+@media(max-width:700px){.sh-project-solar-image{border-radius:18px}.sh-project-solar-image>img{aspect-ratio:3/2;object-position:center 20%}.sh-project-solar-image>figcaption{left:14px;bottom:14px;max-width:calc(100% - 28px);padding:8px 11px;font-size:11px}}

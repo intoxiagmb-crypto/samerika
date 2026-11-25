@@ -151,8 +151,8 @@ export default function HomePage() {
         ].map(({Icon,title,text},index)=><li key={title}><span className={`sh-project-feature-icon tone-${index}`}><Icon size={21} strokeWidth={1.7}/></span><div><h3>{title}</h3><p>{text}</p></div></li>)}</ul>
       </div>
       <figure className="sh-project-solar-image">
-        <Image src="/images/projects/residential.webp" alt="Illustrative home with blue rooftop solar panels in a leafy neighbourhood" width={1200} height={800} sizes="(max-width: 700px) 88vw, 46vw"/>
-        <figcaption><Leaf size={16} aria-hidden="true"/> Rooftop solar illustration</figcaption>
+        <Image src="/images/solar-project-team.webp" alt="Illustration of two solar professionals reviewing a tablet beside rooftop solar panels" width={1200} height={1200} sizes="(max-width: 700px) 88vw, 46vw"/>
+        <figcaption><Leaf size={16} aria-hidden="true"/> Solar installation team · Illustration</figcaption>
       </figure>
     </section>
 

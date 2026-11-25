@@ -1,0 +1,6 @@
+{
+  "tool": "Built-in image_gen",
+  "useCase": "photorealistic-natural",
+  "prompt": "Use case: photorealistic-natural. Asset type: square website editorial image for Samerika Power's 'Your solar story' section. Create a fresh photorealistic illustration of two Indian solar installation professionals reviewing a tablet beside a completed array of deep blue photovoltaic panels on a spacious flat rooftop. One wears a white hard hat, the other an orange hard hat; both wear navy workwear and subtle orange safety vests. They stand safely on a broad clear walkway well inside a substantial parapet, with realistic hands and natural relaxed collaboration. Foreground: crisp aligned solar cells and realistic aluminium rails; background: soft green trees and a few low-rise Indian buildings, clear blue sky. Eye-level three-quarter view, authentic professional photography, soft warm morning sunlight, natural restrained navy blue, green and orange palette. Make the team and solar panels both prominent within the central 70 percent, suitable for a square crop and a mobile landscape crop. No house-front hero composition, no text, no logos, no watermark, no collage, no UI, no charts. This is an illustrative concept, not an actual customer installation. Opaque background.",
+  "asset": "solar-project-team.webp"
+}
