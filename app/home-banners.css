@@ -1,0 +1,49 @@
+.sh-banner-carousel{position:relative;background:#12355b;isolation:isolate;touch-action:pan-y pinch-zoom}
+.sh-banner-stage{display:grid}
+.sh-banner-slide{grid-area:1/1;min-width:0;width:100%;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .6s ease,visibility .6s;overflow:hidden}
+.sh-banner-slide.is-active{opacity:1;visibility:visible;pointer-events:auto}
+.sh-banner-carousel .sh-hero{padding-bottom:170px}
+.sh-banner-carousel .sh-hero-bottom{bottom:85px}
+.sh-banner-title{font-size:clamp(44px,4.3vw,64px);line-height:1.08;letter-spacing:-2.4px;font-weight:700;margin:23px 0 22px;max-width:600px}
+.sh-banner-title em{font-style:normal}
+.sh-banner-art{position:absolute;inset:0;z-index:-1;overflow:hidden}
+.sh-banner-art img{object-fit:cover;object-position:60% center}
+.sh-banner-art:after{content:'';position:absolute;inset:0;background:#051b32a6;pointer-events:none}
+.sh-banner-art>span{position:absolute;right:7%;bottom:95px;z-index:1;display:flex;align-items:center;gap:9px;max-width:85%;padding:12px 17px;border:1px solid #ffffff65;border-radius:12px;background:#ffffffed;color:#163b50;font-size:12px;line-height:1.5}
+.sh-banner-green{--banner-surface:#153d33;--banner-ink:#fff;--banner-accent:#b9f2ce;background:var(--banner-surface)}
+.sh-banner-gold{--banner-surface:#263b58;--banner-ink:#fff;--banner-accent:#ffcc7a;background:var(--banner-surface)}
+.sh-banner-green .sh-hero-content,.sh-banner-gold .sh-hero-content{position:relative}
+.sh-banner-green .sh-banner-title,.sh-banner-gold .sh-banner-title{color:var(--banner-ink)}
+.sh-banner-green .sh-banner-title em,.sh-banner-gold .sh-banner-title em{color:var(--banner-accent)}
+.sh-banner-green .sh-hero-content>p,.sh-banner-gold .sh-hero-content>p{max-width:510px;width:100%;color:var(--banner-ink);font-size:17px}
+.sh-banner-green .sh-eyebrow,.sh-banner-gold .sh-eyebrow{color:var(--banner-accent)}
+.sh-banner-green .sh-eyebrow>span,.sh-banner-gold .sh-eyebrow>span{background:var(--banner-accent)}
+.sh-banner-green .sh-hero-actions,.sh-banner-gold .sh-hero-actions{max-width:620px;gap:10px 22px}
+.sh-banner-green .sh-button{background:#19523d;color:white}.sh-banner-green .sh-button:hover{background:#103e2d}
+.sh-banner-gold .sh-button{background:#253d60;color:white}.sh-banner-gold .sh-button:hover{background:#142b4c}
+.sh-banner-green .sh-hero-link,.sh-banner-gold .sh-hero-link{color:var(--banner-ink)}
+.sh-banner-green .sh-hero-promise,.sh-banner-gold .sh-hero-promise{max-width:510px;color:var(--banner-ink)}
+.sh-banner-green .sh-hero-promise svg,.sh-banner-gold .sh-hero-promise svg{color:var(--banner-accent)}
+.sh-banner-controls{position:absolute;z-index:3;bottom:18px;left:5%;right:5%;max-width:1280px;margin:auto;display:flex;align-items:center;gap:18px;color:#fff}
+.sh-banner-dots{display:flex;align-items:center;gap:2px}.sh-banner-dots button{display:grid;place-items:center;width:34px;height:44px;padding:0;border:0;background:transparent;color:inherit;cursor:pointer}
+.sh-banner-dots button>span{display:block;width:7px;height:7px;background:currentColor;border-radius:20px;opacity:.45;transition:width .25s,opacity .25s}
+.sh-banner-dots button[aria-current]>span{width:25px;opacity:1}
+.sh-banner-count{font-size:11px;font-weight:600;letter-spacing:2px;font-variant-numeric:tabular-nums}
+.sh-banner-carousel a:focus-visible,.sh-banner-carousel button:focus-visible{outline:3px solid #ea8500;outline-offset:4px}
+@media(min-width:701px) and (max-width:1050px){.sh-banner-title{font-size:49px}.sh-banner-green .sh-hero-actions,.sh-banner-gold .sh-hero-actions{flex-direction:column;align-items:flex-start}.sh-banner-green .sh-hero-content>p,.sh-banner-gold .sh-hero-content>p{font-size:16px}.sh-banner-art>span{font-size:11px;max-width:75%}}
+@media(max-width:700px){
+ .sh-banner-carousel .sh-hero{padding-bottom:175px}
+ .sh-banner-carousel .sh-hero-bottom{bottom:79px}
+ .sh-banner-carousel .sh-banner-green,.sh-banner-carousel .sh-banner-gold{padding:45px 6% 190px;min-height:710px;align-items:flex-start}
+ .sh-banner-green .sh-hero-content,.sh-banner-gold .sh-hero-content{margin:0}
+ .sh-banner-title{font-size:clamp(37px,9.5vw,48px);line-height:1.06;letter-spacing:-1.5px;margin:19px 0 17px}
+ .sh-banner-green .sh-hero-content>p,.sh-banner-gold .sh-hero-content>p{width:100%;max-width:440px;font-size:15px;line-height:1.65}
+ .sh-banner-green .sh-hero-actions,.sh-banner-gold .sh-hero-actions{max-width:none;margin-top:20px;gap:8px 20px;flex-direction:row;align-items:center}
+ .sh-banner-green .sh-hero-promise,.sh-banner-gold .sh-hero-promise{max-width:100%;font-size:10px;margin-top:14px}
+ .sh-banner-art{inset:0;height:auto}
+ .sh-banner-art img{object-position:center 54%}
+ .sh-banner-art>span{bottom:80px;left:6%;right:auto;max-width:88%;font-size:10px;padding:9px 12px}
+ .sh-banner-controls{left:6%;right:6%;bottom:14px;gap:10px}.sh-banner-count{font-size:10px;letter-spacing:1px}.sh-banner-dots button{width:30px}
+}
+@media(max-width:360px){.sh-banner-count{display:none}.sh-banner-title{font-size:37px}.sh-banner-green .sh-hero-actions .sh-button,.sh-banner-gold .sh-hero-actions .sh-button{font-size:13px}}
+@media(prefers-reduced-motion:reduce){.sh-banner-slide,.sh-banner-dots button>span{transition:none}}

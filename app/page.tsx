@@ -2,17 +2,19 @@
 
 import { useState } from 'react';
 import HomeEnquiryPopup from '@/components/home-enquiry-popup';
+import HomeBannerCarousel from '@/components/home-banner-carousel';
 import PublicHeader from '@/components/public-header';
 import Image from 'next/image';
 import Link from 'next/link';
 import SolarPlanner from '@/components/solar-planner';
 import SolarHomesCounter from '@/components/solar-homes-counter';
-import { ArrowRight, ArrowUpRight, Building2, Check, CheckCircle2, ClipboardCheck, FileText, House, Leaf, MessageCircle, Minus, PanelsTopLeft, Plus, ShieldCheck, Sun, Users, Headphones } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Building2, Check, ClipboardCheck, FileText, House, Leaf, MessageCircle, Minus, PanelsTopLeft, Plus, ShieldCheck, Sun, Users, Headphones } from 'lucide-react';
 import './home.css';
 import './home-subsidy.css';
 import './home-highlights.css';
 import './home-projects.css';
 import './home-products.css';
+import './home-banners.css';
 
 const offerings = [
   { title: 'Homes', icon: House, property: 'Residential', description: 'Make room for clean energy on the roof you already have.', note: 'For your everyday energy', className: 'home', category: 'Residential', features: ['Rooftop assessment', 'Personalised quotation'], cta: 'Explore home solar' },
@@ -46,12 +48,7 @@ export default function HomePage() {
     <a className="sh-skip" href="#home-content">Skip to content</a>
     <PublicHeader/><HomeEnquiryPopup/>
 
-    <section className="sh-hero" id="home-content" aria-labelledby="home-title">
-      <Image src="/images/samerika-rooftop-hero.webp" alt="Illustrative rooftop solar canopy over a sunlit Indian home terrace" fill sizes="(max-width: 700px) 1200px, 100vw" preload className="sh-hero-image"/>
-      <div className="sh-hero-shade"/>
-      <div className="sh-hero-content"><span className="sh-eyebrow"><span/> SOLAR POWER. EVERYDAY POSSIBILITIES.</span><h1 id="home-title">A brighter future.<br/>Starts on <span>your roof.</span></h1><p>Make your move to solar with a team that connects every step—from your first enquiry to installation.</p><div className="sh-hero-actions"><Link href="/enquiry" scroll={false} className="sh-button sh-primary">Get Free Solar Quote <ArrowRight size={19}/></Link><a href="#solutions" className="sh-hero-link">Explore our solutions <ArrowUpRight size={18}/></a></div><div className="sh-hero-promise"><ShieldCheck size={19}/><span>Your rooftop. Your requirements. A plan built around you.</span></div></div>
-      <div className="sh-hero-bottom"><span><ClipboardCheck size={19}/> Site-led planning</span><span><FileText size={19}/> Clear quotations</span><span><CheckCircle2 size={19}/> Connected project tracking</span></div>
-    </section>
+    <HomeBannerCarousel/>
 
     <section className="sh-highlights" id="solar-highlights" aria-labelledby="highlights-heading">
       <h2 id="highlights-heading">Powering more homes <span>with solar.</span></h2>
