@@ -5,6 +5,7 @@ import {adaptDatabase} from '../lib/database.mjs';
 import {migrate} from '../lib/migrations.mjs';
 import { submitPublicEnquiry } from '../lib/enquiries.mjs';
 import { Business } from '../lib/business.mjs';
+import { leadInbox } from '../lib/lead-inbox.mjs';
 import { DEFAULT_SETTINGS,PHASES,quoteTotal } from '../lib/policy.mjs';
 const clients=[];
 after(()=>{for(const client of clients)client.close();});
@@ -748,4 +749,27 @@ test('migration reopens previously deleted customers once and preserves their ac
  assert.match(reopened.data.activities.at(-1).note,/returned to Leads/);
  await migrate(db.client);
  assert.deepEqual(await s.one('SELECT * FROM leads WHERE id=?',leadId),reopened);
+});
+
+
+test('lead inbox moves customers to projects and returns deleted customers for conversion again',async()=>{
+ const {s,u}=await setup();
+ const leadId=await s.act(u.ADMIN,'lead.create',lead);
+ const inbox=async()=>{const snapshot=await s.snapshot(u.ADMIN);return leadInbox(snapshot.leads,snapshot.projects);};
+ assert.deepEqual((await inbox()).map(item=>item.id),[leadId]);
+ const projectId=await s.act(u.ADMIN,'project.create',{leadId});
+ assert.equal((await inbox()).length,0);
+ let snapshot=await s.snapshot(u.ADMIN);
+ assert.ok(snapshot.leads.some(item=>item.id===leadId),'Customer profile remains available to the project and quotations');
+ const project=snapshot.projects.find(item=>item.id===projectId);
+ await s.act(u.ADMIN,'project.delete',{id:projectId,version:project.version});
+ const returned=(await inbox())[0];assert.equal(returned.id,leadId);assert.equal(returned.status,'New');
+ await s.act(u.ADMIN,'lead.update',{id:leadId,version:returned.version,status:'Contacted',note:'Follow-up after project deletion'});
+ snapshot=await s.snapshot(u.ADMIN);
+ await s.act(u.ADMIN,'project.restore',{id:projectId,version:snapshot.deletedProjects[0].version});
+ assert.equal((await inbox()).length,0);
+ snapshot=await s.snapshot(u.ADMIN);
+ await s.act(u.ADMIN,'project.delete',{id:projectId,version:snapshot.projects[0].version});
+ const nextProjectId=await s.act(u.ADMIN,'project.create',{leadId});
+ assert.notEqual(nextProjectId,projectId);assert.equal((await inbox()).length,0);
 });

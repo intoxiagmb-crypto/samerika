@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { leadInbox } from '@/lib/lead-inbox.mjs';
 import { ArrowUpRight, ArrowRight, CalendarDays, ChevronRight, Clock3, FileText, FolderKanban, Plus, Sun, Wallet, Zap, CheckCircle2 } from 'lucide-react';
 import ProjectStatus from './project-status';
 import SolarLandscape from './solar-landscape';
@@ -20,13 +21,14 @@ export default function PortalOverview({ data, onNavigate, onCreate, onDetail }:
   const active = data.projects.filter(p => !['Completed', 'Cancelled'].includes(p.status));
   const projects = period === 'month' ? data.projects.filter(p => p.created_at.slice(0, 7) === today.slice(0, 7)) : data.projects;
   const completed = data.projects.filter(p => p.status === 'Completed');
-  const newLeads = data.leads.filter(l => l.status === 'New');
+  const inboxLeads = leadInbox(data.leads, data.projects);
+  const newLeads = inboxLeads.filter(l => l.status === 'New');
   const income = data.records.filter(r => agent ? r.kind === 'incentive' && r.status === 'Approved' : r.kind === 'payment').reduce((sum, r) => sum + r.amount, 0);
   const stages = ['Survey', 'Quotation', 'Documentation', 'Approvals', 'Installation', 'Subsidy', 'Handover', 'Completed', 'On Hold', 'Delayed', 'Cancelled'].filter(stage => ['Survey', 'Quotation', 'Documentation', 'Approvals', 'Installation', 'Completed'].includes(stage) || projects.some(p => p.progress?.group === stage));
   const counts = stages.map(stage => projects.filter(p => (p.progress?.group || p.status) === stage).length);
   const maxCount = Math.max(1, ...counts);
   const dates = [
-    ...data.leads.filter(l => l.data.followUp && l.status !== 'Converted').map(l => ({ id: l.id, title: l.name, date: l.data.followUp, label: 'Customer follow-up', row: l, type: 'lead' })),
+    ...inboxLeads.filter(l => l.data.followUp && l.status !== 'Converted').map(l => ({ id: l.id, title: l.name, date: l.data.followUp, label: 'Customer follow-up', row: l, type: 'lead' })),
     ...active.filter(p => p.data.dueDate).map(p => ({ id: p.id, title: p.data.name, date: p.data.dueDate, label: 'Target completion', row: p, type: 'project' })),
   ].filter(item => schedule === 'today' ? item.date === today : item.date >= today).sort((a, b) => a.date.localeCompare(b.date));
   const relevantUpdates = data.notifications.slice(0, 3);
@@ -46,7 +48,7 @@ export default function PortalOverview({ data, onNavigate, onCreate, onDetail }:
       </section>
 
       <div className="overview-totals">
-        {[{ label: 'Total leads', value: data.leads.length, icon: FileText, view: 'leads' }, { label: 'Active projects', value: active.length, icon: FolderKanban, view: 'projects' }, { label: agent ? 'Approved earnings' : 'Collections', value: money(income), icon: Wallet, view: agent ? 'finance' : 'payments' }].filter(item => item.view !== 'payments' || ['ADMIN', 'FINANCE', 'CUSTOMER', 'MANAGER'].includes(data.user.role)).map(item => <button key={item.label} onClick={() => onNavigate(item.view)} className="overview-total"><span className="total-icon"><item.icon size={19}/></span><span><small>{item.label}</small><strong>{item.value}</strong></span><ArrowUpRight size={15}/></button>)}
+        {[{ label: 'Total leads', value: inboxLeads.length, icon: FileText, view: 'leads' }, { label: 'Active projects', value: active.length, icon: FolderKanban, view: 'projects' }, { label: agent ? 'Approved earnings' : 'Collections', value: money(income), icon: Wallet, view: agent ? 'finance' : 'payments' }].filter(item => item.view !== 'payments' || ['ADMIN', 'FINANCE', 'CUSTOMER', 'MANAGER'].includes(data.user.role)).map(item => <button key={item.label} onClick={() => onNavigate(item.view)} className="overview-total"><span className="total-icon"><item.icon size={19}/></span><span><small>{item.label}</small><strong>{item.value}</strong></span><ArrowUpRight size={15}/></button>)}
       </div>
 
       <div className="overview-analysis">
@@ -61,7 +63,7 @@ export default function PortalOverview({ data, onNavigate, onCreate, onDetail }:
             <div className="chart-legend"><span/><span>Projects by current stage</span><b>{period === 'month' ? 'THIS MONTH' : 'ALL TIME'}</b></div>
           </div>
           <div className="overview-section-title recent-title"><h3>{agent ? 'Your customers' : 'Recent enquiries'}</h3><button onClick={() => onNavigate('leads')}>See all</button></div>
-          <div className="overview-lead-list">{data.leads.slice(0, 3).map((lead, i) => <button className="overview-lead" key={lead.id} onClick={() => onDetail(lead, 'lead')}><span className={`customer-initial initial-${i}`}>{lead.name.split(' ').map((s: string) => s[0]).slice(0, 2).join('')}</span><span><b>{lead.name}</b><small>{lead.data.capacity?`${lead.data.capacity} kW`:'Size to be assessed'} · {lead.data.city}</small></span><span className="lead-state">{lead.status}</span><ChevronRight size={15}/></button>)}{!data.leads.length && <div className="overview-card small-empty"><FileText size={22}/><p>Your customer requirements will appear here.</p>{canAdd && <button onClick={onCreate}>Add a requirement <Plus size={13}/></button>}</div>}</div>
+          <div className="overview-lead-list">{inboxLeads.slice(0, 3).map((lead, i) => <button className="overview-lead" key={lead.id} onClick={() => onDetail(lead, 'lead')}><span className={`customer-initial initial-${i}`}>{lead.name.split(' ').map((s: string) => s[0]).slice(0, 2).join('')}</span><span><b>{lead.name}</b><small>{lead.data.capacity?`${lead.data.capacity} kW`:'Size to be assessed'} · {lead.data.city}</small></span><span className="lead-state">{lead.status}</span><ChevronRight size={15}/></button>)}{!inboxLeads.length && <div className="overview-card small-empty"><FileText size={22}/><p>Your customer requirements will appear here.</p>{canAdd && <button onClick={onCreate}>Add a requirement <Plus size={13}/></button>}</div>}</div>
         </section>
 
         <section className="progress-section">
