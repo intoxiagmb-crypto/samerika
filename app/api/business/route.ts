@@ -15,7 +15,7 @@ export async function POST(request:Request){
  if(Number(request.headers.get('content-length'))>65536)return json({error:'Request too large.'},413);
  const raw=new TextDecoder().decode(await readLimitedBody(request,65536));
  let payload;try{payload=JSON.parse(raw);}catch{return json({error:'Invalid JSON body.'},400);}if(!payload||typeof payload!=='object'||Array.isArray(payload))return json({error:'Expected a JSON object.'},400);const {action,data}=payload;const identity=await getPortalIdentity();if(!identity)return json({error:'Sign in to continue.'},401);const db=getDatabase();const service=new Business(db);const user=await service.user(identity,action==='profile'?data?.role:undefined);
- if(action==='quote.share')return json({ok:true,...await createQuotationShare(db,user,data?.id)});
+ if(action==='quote.share')return json({ok:true,...await createQuotationShare(db,user,data?.id,Date.now(),request.headers.get('origin'))});
  if(action==='quote.share.revoke'){await revokeQuotationShares(db,user,data?.id);return json({ok:true});}
  const id=action==='user.create'?await createAccount(db,user,data):action==='user.password_reset'?await resetAccountPassword(db,user,data):await service.act(user,action,data);return json({ok:true,id});
  }catch(e){const r=errorResponse(e);return json(r,r.status);}

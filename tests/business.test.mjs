@@ -635,3 +635,32 @@ test('quotation tax pricing choice is validated, calculated on the server and pr
  assert.equal(legacy.data.priceTaxMode,'inclusive');assert.equal(legacy.amount,299700);
  assert.equal(legacy.data.subtotal+legacy.data.tax,legacy.amount);
 });
+
+
+test('WhatsApp recipient, message and link come from the same saved quotation, never the sender or another customer',async()=>{
+ const {createQuotationShare,getSharedQuotation}=await import('../lib/quotation-sharing.mjs');
+ const {db,s,u}=await setup();const {projectId,leadId}=await createProject(s,u);
+ const productId=await s.act(u.ADMIN,'product.create',{name:'Panel',brand:'Test',category:'Solar panel',capacity:1,price:100,taxRate:5,system:'On-grid',warranty:'Test'});
+ const first=await s.act(u.SALES,'quote.create',{projectId,items:[{productId,quantity:1}],validUntil:'2099-12-31'});
+ const secondLead=await s.act(u.ADMIN,'lead.create',{...lead,name:'Second Customer',email:'second@example.test',mobile:'8765432109'});
+ const second=await s.act(u.ADMIN,'quote.create',{customerId:secondLead,items:[{productId,quantity:2}],validUntil:'2099-12-31'});
+ for(const id of [first,second]){
+  await s.act(u.ADMIN,'record.update',{id,status:'Approved'});
+  await s.act(u.ADMIN,'record.update',{id,status:'Sent'});
+ }
+ // Contact changes must not redirect a quotation away from the number printed on it.
+ await s.run('UPDATE leads SET mobile=? WHERE id=?','7654321098',leadId);
+ const sender={...u.ADMIN,profile:{mobile:'6543210987'}};
+ for(const [id,phone,name,total] of [[first,'919876543210','Test Customer','105.00'],[second,'918765432109','Second Customer','210.00']]){
+  const share=await createQuotationShare(db,sender,id,Date.now(),'https://solar.example.test');
+  const whatsapp=new URL(share.whatsapp);const message=whatsapp.searchParams.get('text');
+  assert.equal(whatsapp.origin,'https://wa.me');assert.equal(whatsapp.pathname,'/'+phone);
+  assert.deepEqual(share.recipient,{name,phone});assert.equal(share.url,'https://solar.example.test'+share.path);
+  assert.ok(message.includes(id));assert.ok(message.includes(name));assert.ok(message.includes(total));assert.ok(message.includes(share.url));
+  assert.equal(message.includes('6543210987'),false);assert.equal(message.includes(id===first?second:first),false);
+  assert.equal((await getSharedQuotation(db,share.path.split('/').pop())).id,id);
+ }
+ const invalid=await s.one('SELECT * FROM records WHERE id=?',first);
+ await s.run('UPDATE records SET data=? WHERE id=?',JSON.stringify({...invalid.data,customerDetails:{...invalid.data.customerDetails,mobile:''}}),first);
+ await assert.rejects(createQuotationShare(db,u.ADMIN,first,Date.now(),'https://solar.example.test'),/valid customer mobile/);
+});
