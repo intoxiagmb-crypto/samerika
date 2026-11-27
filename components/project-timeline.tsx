@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { Check, Upload } from 'lucide-react';
 import { trackingSteps } from '@/lib/application-tracking.mjs';
 
@@ -65,16 +65,24 @@ export default function ProjectTimeline({ project, records, requiredDocuments, r
       selector(name, status, manage, value => { void onUpdate('project.approval', { ...extra, name, status: value === 'Completed' ? 'Approved' : value === 'Pending' ? 'Submitted' : value === 'Cash' ? 'Cash' : 'Processing', reference: draft(`approval-${name}`, approval?.data.reference || '') }, `${name}: ${value}`); }, false, name === 'Bank approval' ? [...statuses, 'Cash'] : statuses),
       cash ? <small>Cash payment · bank approval is not required.</small> : manage && live ? input(`approval-${name}`, `${name} reference (required to complete)`, approval?.data.reference || '') : approval?.data.reference && <small>{approval.data.reference}</small>);
   });
+  const subsidy = project.data.subsidy || { status: 'Pending' };
+  const handoverIndex = project.data.phases.findIndex((phase: Row) => phase.name === 'Customer handover');
+  const subsidyUnlocked = handoverIndex >= 0 && project.data.phases.slice(0, handoverIndex).filter((phase: Row) => phase.name !== 'Quality inspection').every((phase: Row) => phase.status === 'Completed');
+  const subsidyRow = row('subsidy', 'Subsidy', subsidy.status,
+    selector('Subsidy', subsidy.status, technical, status => { void onUpdate('project.update', { ...extra, subsidyStatus: status, subsidyNote: draft('subsidy', subsidy.note || '') }, `Subsidy: ${status}`); }, !subsidyUnlocked),
+    technical && live && <details className="project-step-notes"><summary>Notes / reference (optional)</summary>{input('subsidy', 'Subsidy note / reference', subsidy.note || '')}</details>,
+    !subsidyUnlocked && technical && live ? 'Complete the previous installation phases first.' : subsidy.updatedBy ? `Updated by ${subsidy.updatedBy}` : undefined);
   const phases = project.data.phases.map((phase: Row, index: number) => {
     if (phase.name === 'Quality inspection') return null;
     const handover = phase.name === 'Customer handover';
     const name = phase.name === 'Meter & grid connection' ? 'Net Metering' : ['Testing & commissioning', 'DCR'].includes(phase.name) ? 'DCR Registration' : phase.name;
     const unlocked = project.data.phases.slice(0, index).filter((item: Row) => item.name !== 'Quality inspection').every((item: Row) => item.status === 'Completed');
     const editable = handover ? manage : technical;
-    return row(`phase-${index}`, name, phase.status,
+    const phaseRow = row(`phase-${index}`, name, phase.status,
       selector(name, phase.status, editable, status => { void onUpdate('project.update', { ...extra, phase: index, phaseStatus: status, evidence: draft(`phase-${index}`, phase.evidence || '') }, `${name}: ${status}`); }, !unlocked),
       editable && live && (handover ? input(`phase-${index}`, 'Customer acknowledgement (required to complete)', phase.evidence || '') : <details className="project-step-notes"><summary>Notes / evidence (optional)</summary>{input(`phase-${index}`, `${name} evidence`, phase.evidence || '')}</details>),
       !unlocked && editable && live ? 'Complete the previous installation phase first.' : phase.updatedBy ? `Updated by ${phase.updatedBy}` : undefined);
+    return handover ? <Fragment key={`phase-${index}`}>{subsidyRow}{phaseRow}</Fragment> : phaseRow;
   });
   return <section className="project-timeline" aria-labelledby="project-timeline-title" aria-busy={saving}>
     <h3 id="project-timeline-title">Installation timeline</h3><p>हर लाइन पर status बदलें — बदलाव अपने आप save होगा।</p>

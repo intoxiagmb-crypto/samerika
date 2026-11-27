@@ -429,3 +429,34 @@ test('new projects and legacy company settings use seven installation phases',as
  assert.deepEqual((await s.settings()).phases,PHASES);
  await s.act(u.ADMIN,'settings',legacySettings);assert.deepEqual((await s.settings()).phases,PHASES);
 });
+
+test('Subsidy tracks pending, processing and completed without changing saved installation phases',async()=>{
+ const {s,u}=await setup();const {projectId}=await createProject(s,u);
+ const get=()=>s.one('SELECT * FROM projects WHERE id=?',projectId);
+ let p=await get();
+ await assert.rejects(s.act(u.MANAGER,'project.update',{id:projectId,version:p.version,subsidyStatus:'Processing'}),/previous installation phases/);
+ for(let phase=0;phase<6;phase++)await s.act(u.TECHNICAL,'project.update',{id:projectId,phase,phaseStatus:'Completed'});
+ p=await get();const originalPhases=structuredClone(p.data.phases);
+ for(const subsidyStatus of ['Processing','Completed','Pending']){
+  p=await get();await s.act(u.MANAGER,'project.update',{id:projectId,version:p.version,subsidyStatus,subsidyNote:'SUB-001'});
+  const saved=await get();assert.equal(saved.data.subsidy.status,subsidyStatus);assert.equal(saved.data.subsidy.note,'SUB-001');assert.equal(saved.data.subsidy.updatedBy,'MANAGER');assert.deepEqual(saved.data.phases,originalPhases);
+ }
+ p=await get();assert.deepEqual(p.data.subsidy.history.map(entry=>entry.status),['Processing','Completed','Pending']);
+ await assert.rejects(s.act(u.MANAGER,'project.update',{id:projectId,version:p.version-1,subsidyStatus:'Completed'}),e=>e.status===409);
+ await assert.rejects(s.act(u.CUSTOMER,'project.update',{id:projectId,version:p.version,subsidyStatus:'Completed'}),e=>e.status===403);
+ await assert.rejects(s.act(u.MANAGER,'project.update',{id:projectId,version:p.version,subsidyStatus:'Approved'}));
+ const logs=await s.all("SELECT * FROM audit WHERE entity_id=? AND action='project.update'",projectId);
+ assert.equal(logs.filter(log=>JSON.parse(log.detail).subsidyStatus).length,3);
+});
+
+test('Subsidy works on legacy projects with a hidden quality phase and an existing handover',async()=>{
+ const {s,u}=await setup();const {projectId}=await createProject(s,u);
+ let p=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ const phases=p.data.phases.map(phase=>({...phase,status:'Completed',evidence:'Original saved evidence'}));
+ phases.splice(6,0,{name:'Quality inspection',status:'Pending'});
+ await s.run('UPDATE projects SET data=? WHERE id=?',JSON.stringify({...p.data,phases,handover:true,handoverEvidence:'Original customer signature'}),projectId);
+ p=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ await s.act(u.MANAGER,'project.update',{id:projectId,version:p.version,subsidyStatus:'Processing'});
+ const saved=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ assert.deepEqual(saved.data.phases,phases);assert.equal(saved.data.handoverEvidence,'Original customer signature');assert.equal(saved.data.subsidy.status,'Processing');
+});
