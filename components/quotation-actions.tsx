@@ -14,18 +14,15 @@ export default function QuotationActions({quote,role}:{quote:Row;role:string}){
  const phone=whatsappNumber(quote.data.customerDetails?.mobile);
  async function prepare(){
   if(busy)return;
-  // Open during the click so mobile browsers do not block the awaited navigation.
-  const popup=window.open('about:blank','_blank');
-  if(popup){popup.opener=null;popup.document.title='Opening customer WhatsApp';popup.document.body.textContent='Preparing your customer’s quotation…';}
+  if(!phone){setError('Add a valid customer mobile number to this quotation before sharing.');return;}
   setBusy(true);setError('');setNotice('');setShare(null);
   try{
-   const r=await fetch('/api/business',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'quote.share',data:{id:quote.id}})});
+   const r=await fetch('/api/business',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'quote.share',data:{id:quote.id,publish:role==='ADMIN'&&!ready}})});
    const result=await r.json() as Share & {error?:string};if(!r.ok)throw new Error(result.error||'Unable to prepare quotation link.');
    if(!result.whatsapp||!result.url||!result.recipient?.phone)throw new Error('Unable to prepare customer WhatsApp. Please try again.');
    setShare(result);
-   if(popup&&!popup.closed){popup.location.replace(result.whatsapp);setNotice('Customer WhatsApp opened. Review the message and press Send there.');}
-   else setNotice('Your quotation is ready. Use Open customer WhatsApp below to continue.');
-  }catch(e){if(popup&&!popup.closed)popup.close();setError((e as Error).message);}finally{setBusy(false);}
+   window.location.assign(result.whatsapp);
+  }catch(e){setError((e as Error).message);}finally{setBusy(false);}
  }
  async function revoke(){
   setBusy(true);setError('');
@@ -35,11 +32,11 @@ export default function QuotationActions({quote,role}:{quote:Row;role:string}){
    setShare(null);setNotice('All shared links for this quotation have been revoked.');
   }catch(e){setError((e as Error).message);}finally{setBusy(false);}
  }
- return <section className="quotation-actions" aria-label="Print and share quotation"><div className="credential-actions"><QuotationPrintButton/>{permitted&&<button className="button button-glow" disabled={busy||!ready||!phone} onClick={prepare}>{busy?<LoaderCircle size={16} className="spin"/>:<MessageCircle size={16}/>} {busy?'Opening WhatsApp…':'WhatsApp customer'}</button>}{role==='ADMIN'&&<button className="button button-secondary" disabled={busy} onClick={revoke}>Revoke shared links</button>}</div>
+ return <section className="quotation-actions" aria-label="Print and share quotation"><div className="credential-actions"><QuotationPrintButton/>{permitted&&<button className="button button-glow" disabled={busy} onClick={prepare}>{busy?<LoaderCircle size={16} className="spin"/>:<MessageCircle size={16}/>} {busy?'Opening WhatsApp…':role==='ADMIN'&&['Draft','Approved'].includes(quote.status)?'Approve & WhatsApp PDF':'WhatsApp PDF to customer'}</button>}{role==='ADMIN'&&<button className="button button-secondary" disabled={busy} onClick={revoke}>Revoke shared links</button>}</div>
  {permitted&&phone&&<p>Customer: <b>{quote.data.customerDetails?.name||quote.data.customer}</b> · WhatsApp: <b>+{phone}</b></p>}
- {permitted&&!ready&&<p>Approve this quotation and mark it Sent before sharing it on WhatsApp.</p>}
+ {permitted&&!ready&&role!=='ADMIN'&&<p>Approve this quotation and mark it Sent before sharing it on WhatsApp.</p>}
  {permitted&&ready&&!phone&&<p>A valid customer mobile number must be saved on the quotation for WhatsApp sharing.</p>}
- {share&&<div className="quotation-share-ready"><p>Send to <b>{share.recipient.name}</b>: <b>+{share.recipient.phone}</b>. Anyone with the link can view this quotation until {new Date(share.expiresAt).toLocaleDateString('en-IN',{timeZone:'Asia/Kolkata'})}.</p><div className="credential-actions"><a className="button button-glow" href={share.whatsapp} target="_blank" rel="noopener noreferrer"><MessageCircle size={16}/> Open customer WhatsApp</a><button className="button button-secondary" onClick={async()=>{try{await navigator.clipboard.writeText(share.url);setNotice('Quotation link copied.');}catch{setNotice('Select and copy the quotation link below.');}}}><Link2 size={16}/> Copy quotation link</button></div><input aria-label="Quotation sharing link" readOnly value={share.url} onFocus={e=>e.target.select()}/><p>Review the prepared message and press Send in WhatsApp. The message contains this quotation’s number, total and link. The customer can open it and save an A4 PDF.</p></div>}
+ {share&&<div className="quotation-share-ready"><p>Send to <b>{share.recipient.name}</b>: <b>+{share.recipient.phone}</b>. Anyone with the link can view this quotation until {new Date(share.expiresAt).toLocaleDateString('en-IN',{timeZone:'Asia/Kolkata'})}.</p><div className="credential-actions"><a className="button button-glow" href={share.whatsapp} target="_blank" rel="noopener noreferrer"><MessageCircle size={16}/> Open customer WhatsApp</a><a className="button button-secondary" href={share.url} target="_blank" rel="noopener noreferrer"><Download size={16}/> Open quotation PDF</a><button className="button button-secondary" onClick={async()=>{try{await navigator.clipboard.writeText(share.url);setNotice('Quotation link copied.');}catch{setNotice('Select and copy the quotation link below.');}}}><Link2 size={16}/> Copy quotation link</button></div><input aria-label="Quotation sharing link" readOnly value={share.url} onFocus={e=>e.target.select()}/><p>Review the prepared message and press Send in WhatsApp. The message contains this quotation’s number, total and link. The link opens the quotation PDF directly. To send a file attachment, download the PDF and attach it in WhatsApp.</p></div>}
  {notice&&<p role="status">{notice}</p>}{error&&<p className="alert error" role="alert">{error}</p>}
  </section>;
 }

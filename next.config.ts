@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ["pdfkit"],
+  outputFileTracingIncludes: {"/quotation/*/pdf": ["./public/fonts/NotoSansDevanagari.ttf"]},
   async headers() {
     return [{source:'/quotation/:path*',headers:[
       {key:'Referrer-Policy',value:'no-referrer'},

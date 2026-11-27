@@ -655,7 +655,7 @@ test('WhatsApp recipient, message and link come from the same saved quotation, n
   const share=await createQuotationShare(db,sender,id,Date.now(),'https://solar.example.test');
   const whatsapp=new URL(share.whatsapp);const message=whatsapp.searchParams.get('text');
   assert.equal(whatsapp.origin,'https://wa.me');assert.equal(whatsapp.pathname,'/'+phone);
-  assert.deepEqual(share.recipient,{name,phone});assert.equal(share.url,'https://solar.example.test'+share.path);
+  assert.deepEqual(share.recipient,{name,phone});assert.equal(share.url,'https://solar.example.test'+share.pdfPath);
   assert.ok(message.includes(id));assert.ok(message.includes(name));assert.ok(message.includes(total));assert.ok(message.includes(share.url));
   assert.equal(message.includes('6543210987'),false);assert.equal(message.includes(id===first?second:first),false);
   assert.equal((await getSharedQuotation(db,share.path.split('/').pop())).id,id);
@@ -663,4 +663,35 @@ test('WhatsApp recipient, message and link come from the same saved quotation, n
  const invalid=await s.one('SELECT * FROM records WHERE id=?',first);
  await s.run('UPDATE records SET data=? WHERE id=?',JSON.stringify({...invalid.data,customerDetails:{...invalid.data.customerDetails,mobile:''}}),first);
  await assert.rejects(createQuotationShare(db,u.ADMIN,first,Date.now(),'https://solar.example.test'),/valid customer mobile/);
+});
+
+test('admin can publish and share a draft in one click with a real PDF; other roles cannot bypass approval',async()=>{
+ const {createQuotationShare,revokeQuotationShares}=await import('../lib/quotation-sharing.mjs');
+ const {sharedQuotationPdfResponse}=await import('../lib/quotation-pdf.mjs');
+ const {db,s,u}=await setup();const {projectId}=await createProject(s,u);
+ const productId=await s.act(u.ADMIN,'product.create',{name:'Panel',brand:'Test',category:'Solar panel',capacity:1,price:100,taxRate:5,system:'On-grid',warranty:'Test'});
+ const id=await s.act(u.SALES,'quote.create',{projectId,items:[{productId,quantity:1}],validUntil:'2099-12-31'});
+ for(const user of [u.SALES,u.MANAGER,u.PARTNER])await assert.rejects(createQuotationShare(db,user,id,Date.now(),'https://solar.example.test',{publish:true}),/permission/);
+ assert.equal((await s.one('SELECT * FROM records WHERE id=?',id)).status,'Draft');
+ const share=await createQuotationShare(db,u.ADMIN,id,Date.now(),'https://solar.example.test',{publish:true});
+ assert.equal((await s.one('SELECT * FROM records WHERE id=?',id)).status,'Sent');
+ assert.ok(share.url.endsWith('/pdf'));assert.ok(new URL(share.whatsapp).searchParams.get('text').includes(share.url));
+ const token=share.path.split('/').pop();const response=await sharedQuotationPdfResponse(db,token);
+ assert.equal(response.status,200);assert.equal(response.headers.get('Content-Type'),'application/pdf');
+ assert.ok(response.headers.get('Content-Disposition').includes(id+'.pdf'));assert.ok(response.headers.get('Cache-Control').includes('no-store'));
+ const pdf=Buffer.from(await response.arrayBuffer());assert.equal(pdf.subarray(0,5).toString(),'%PDF-');assert.ok(pdf.length>1000);
+ const audit=await s.one("SELECT * FROM audit WHERE entity_id=? AND action='quote.approved_and_published'",id);
+ assert.equal(JSON.parse(audit.detail).delivery,'Not confirmed');
+ await revokeQuotationShares(db,u.ADMIN,id);assert.equal((await sharedQuotationPdfResponse(db,token)).status,404);
+ assert.equal((await sharedQuotationPdfResponse(db,'invalid')).status,404);
+});
+
+test('direct WhatsApp publication validates phone and expiry before changing the quotation',async()=>{
+ const {createQuotationShare}=await import('../lib/quotation-sharing.mjs');
+ const {db,s,u}=await setup();const {projectId}=await createProject(s,u);
+ for(const data of [{customerDetails:{mobile:''},validUntil:'2099-12-31'},{customerDetails:{mobile:'9876543210'},validUntil:'2000-01-01'}]){
+  const id=await s.createRecord(u.ADMIN,'quote',projectId,'Draft',data);
+  await assert.rejects(createQuotationShare(db,u.ADMIN,id,Date.now(),'https://solar.example.test',{publish:true}),/mobile|expired/);
+  assert.equal((await s.one('SELECT * FROM records WHERE id=?',id)).status,'Draft');
+ }
 });
