@@ -360,3 +360,41 @@ test('profile and tracking application numbers stay synchronized without replaci
  project=await s.one('SELECT * FROM projects WHERE id=?',projectId);
  assert.equal(project.data.customerBillNumber,'');assert.equal(project.data.tracking.applicationNumber,'');assert.deepEqual(project.data.tracking.steps,before.data.tracking.steps);
 });
+
+test('bank approval Cash updates payment preference, keeps other approvals and can return to finance',async()=>{
+ const {s,u}=await setup();const {leadId,projectId}=await createProject(s,u);
+ await s.act(u.MANAGER,'project.update',{id:projectId,requiredApprovals:['Bank approval','DISCOM approval']});
+ const get=()=>s.one('SELECT * FROM projects WHERE id=?',projectId);
+ let project=await get();
+ const id=await s.act(u.MANAGER,'project.approval',{id:projectId,version:project.version,name:'Bank approval',status:'Approved',reference:'BANK-001'});
+ project=await get();const version=project.version;
+ await s.act(u.MANAGER,'project.approval',{id:projectId,version,name:'Bank approval',status:'Cash'});
+ project=await get();assert.equal(project.data.finance,'Cash');assert.deepEqual(project.data.requiredApprovals,['DISCOM approval']);
+ assert.equal((await s.one('SELECT * FROM leads WHERE id=?',leadId)).data.finance,'Cash');
+ let approval=await s.one('SELECT * FROM records WHERE id=?',id);
+ assert.equal(approval.status,'Cash');assert.equal(approval.data.reference,'BANK-001');assert.deepEqual(approval.data.history.map(entry=>entry.status),['Approved','Cash']);
+ assert.equal((await s.all("SELECT * FROM records WHERE project_id=? AND kind='payment'",projectId)).length,0);
+ await assert.rejects(s.act(u.MANAGER,'project.approval',{id:projectId,version,name:'Bank approval',status:'Processing'}),e=>e.status===409);
+ await s.act(u.MANAGER,'project.approval',{id:projectId,version:project.version,name:'Bank approval',status:'Processing'});
+ project=await get();assert.equal(project.data.finance,'Finance');assert.deepEqual(project.data.requiredApprovals,['DISCOM approval','Bank approval']);
+ assert.equal((await s.one('SELECT * FROM leads WHERE id=?',leadId)).data.finance,'Finance');
+ await assert.rejects(s.act(u.MANAGER,'project.approval',{id:projectId,version:project.version,name:'Bank approval',status:'Approved'}),/approval reference/);
+ await assert.rejects(s.act(u.MANAGER,'project.approval',{id:projectId,version:project.version,name:'DISCOM approval',status:'Cash'}),/only available for bank approval/);
+});
+
+test('Cash needs no approval reference and respects permissions and read-only projects',async()=>{
+ const {s,u}=await setup();const {leadId,projectId}=await createProject(s,u);
+ let p=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ const patch={id:projectId,version:p.version,name:'Bank approval',status:'Cash'};
+ for(const role of ['SALES','CUSTOMER','PARTNER','TECHNICAL','VERIFIER','FINANCE'])await assert.rejects(s.act(u[role],'project.approval',patch),e=>e.status===403);
+ await s.act(u.ADMIN,'project.approval',patch);
+ p=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ assert.equal(p.data.finance,'Cash');assert.deepEqual(p.data.requiredApprovals,[]);
+ await s.act(u.ADMIN,'project.approval',{...patch,version:p.version,status:'Submitted'});
+ p=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ assert.equal(p.data.finance,'Finance');assert.deepEqual(p.data.requiredApprovals,['Bank approval']);
+ await s.act(u.ADMIN,'project.update',{id:projectId,version:p.version,status:'Cancelled',note:'Customer cancelled'});
+ p=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ await assert.rejects(s.act(u.ADMIN,'project.approval',{...patch,version:p.version}),/read-only/);
+ assert.equal((await s.one('SELECT * FROM leads WHERE id=?',leadId)).data.finance,'Finance');
+});

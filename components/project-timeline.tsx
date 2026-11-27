@@ -29,10 +29,10 @@ export default function ProjectTimeline({ project, records, requiredDocuments, r
   const extra = { id: project.id, version: project.version };
   const draft = (id: string, saved = '') => notes[id] ?? saved;
   const input = (id: string, label: string, saved = '') => <input aria-label={label} placeholder={label} value={draft(id, saved)} disabled={saving || !live} onChange={event => setNotes(current => ({ ...current, [id]: event.target.value }))}/>;
-  function selector(label: string, status: string, editable: boolean, change: (value: string) => void, blocked = false) {
+  function selector(label: string, status: string, editable: boolean, change: (value: string) => void, blocked = false, choices = statuses) {
     return editable && live ? <select aria-label={`${label} status`} value={displayStatus(status)} disabled={saving || blocked} onChange={event => change(event.target.value)}>
-      {![...statuses, 'Approved'].includes(displayStatus(status)) && <option value={displayStatus(status)}>{status}</option>}
-      {statuses.map(value => <option key={value} value={value}>{value}</option>)}
+      {![...choices, 'Approved'].includes(displayStatus(status)) && <option value={displayStatus(status)}>{status}</option>}
+      {choices.map(value => <option key={value} value={value}>{value}</option>)}
     </select> : <span className="project-step-status">{displayStatus(status)}</span>;
   }
   function row(id: string, label: string, status: string, control: React.ReactNode, content?: React.ReactNode, hint?: string) {
@@ -56,12 +56,14 @@ export default function ProjectTimeline({ project, records, requiredDocuments, r
       <div className="project-step-files">{document && role !== 'PARTNER' && <a href={`/api/files?id=${encodeURIComponent(document.id)}`}>{document.data.name}</a>}{document && role === 'PARTNER' && <span>{document.data.name}</span>}{upload && live && <label className="project-upload"><Upload size={14}/>{document ? 'Replace document' : 'Upload document'}<input aria-label={`Upload ${name}`} type="file" accept="application/pdf,image/jpeg,image/png" disabled={saving} onChange={event => { const file = event.target.files?.[0]; event.target.value = ''; if (file) void onUpload(file, name); }}/></label>}</div>,
       document ? document.status === 'Submitted' ? 'Uploaded · ready to review and complete' : `Document: ${document.status}` : 'Upload PDF, JPEG or PNG · up to 4 MB');
   });
-  const approvals = (project.data.requiredApprovals || []).map((name: string) => {
+  const approvalNames = Array.from(new Set([...(project.data.requiredApprovals || []), ...(project.data.finance === 'Cash' ? ['Bank approval'] : [])]));
+  const approvals = approvalNames.map((name: string) => {
     const approval = projectRecords.find(record => record.kind === 'approval' && record.data.name === name);
-    const status = !approval || approval.status === 'Submitted' ? 'Pending' : approval.status === 'Approved' ? 'Completed' : approval.status;
+    const cash = name === 'Bank approval' && project.data.finance === 'Cash';
+    const status = cash ? 'Cash' : !approval || approval.status === 'Submitted' ? 'Pending' : approval.status === 'Approved' ? 'Completed' : approval.status;
     return row(`approval-${name}`, name, status,
-      selector(name, status, manage, value => { void onUpdate('project.approval', { ...extra, name, status: value === 'Completed' ? 'Approved' : value === 'Pending' ? 'Submitted' : 'Processing', reference: draft(`approval-${name}`, approval?.data.reference || '') }, `${name}: ${value}`); }),
-      manage && live ? input(`approval-${name}`, `${name} reference (required to complete)`, approval?.data.reference || '') : approval?.data.reference && <small>{approval.data.reference}</small>);
+      selector(name, status, manage, value => { void onUpdate('project.approval', { ...extra, name, status: value === 'Completed' ? 'Approved' : value === 'Pending' ? 'Submitted' : value === 'Cash' ? 'Cash' : 'Processing', reference: draft(`approval-${name}`, approval?.data.reference || '') }, `${name}: ${value}`); }, false, name === 'Bank approval' ? [...statuses, 'Cash'] : statuses),
+      cash ? <small>Cash payment · bank approval is not required.</small> : manage && live ? input(`approval-${name}`, `${name} reference (required to complete)`, approval?.data.reference || '') : approval?.data.reference && <small>{approval.data.reference}</small>);
   });
   const phases = project.data.phases.map((phase: Row, index: number) => {
     const unlocked = project.data.phases.slice(0, index).every((item: Row) => item.status === 'Completed');
