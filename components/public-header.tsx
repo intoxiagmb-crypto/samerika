@@ -25,7 +25,7 @@ export default function PublicHeader({about = false, projects = false, programs 
       <a href={`${home}#faqs`}>FAQs</a>
       <Link href="/login" className="sh-nav-login">Sign in</Link>
     </nav>
-    <Link href="/enquiry" scroll={false} className="sh-button sh-primary sh-header-cta">Get Free Quote</Link>
+    <Link href="/enquiry?property=Residential&program=pm-surya-ghar" scroll={false} className="sh-button sh-primary sh-header-cta">Apply For Solar Subsidy</Link>
     <button className="sh-menu" aria-label={menu ? 'Close menu' : 'Open menu'} aria-controls="public-navigation" aria-expanded={menu} onClick={() => setMenu(!menu)}>{menu ? <X/> : <Menu/>}</button>
   </header>;
 }
