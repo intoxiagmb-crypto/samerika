@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import HomeEnquiryPopup from '@/components/home-enquiry-popup';
 import PublicHeader from '@/components/public-header';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -42,12 +43,12 @@ export default function HomePage() {
   const [faq, setFaq] = useState<number | null>(0);
   return <main className="samerika-home">
     <a className="sh-skip" href="#home-content">Skip to content</a>
-    <PublicHeader/>
+    <PublicHeader/><HomeEnquiryPopup/>
 
     <section className="sh-hero" id="home-content" aria-labelledby="home-title">
       <Image src="/images/samerika-rooftop-hero.webp" alt="Illustrative rooftop solar canopy over a sunlit Indian home terrace" fill sizes="(max-width: 700px) 1200px, 100vw" preload className="sh-hero-image"/>
       <div className="sh-hero-shade"/>
-      <div className="sh-hero-content"><span className="sh-eyebrow"><span/> SOLAR POWER. EVERYDAY POSSIBILITIES.</span><h1 id="home-title">A brighter future.<br/>Starts on <span>your roof.</span></h1><p>Make your move to solar with a team that connects every step—from your first enquiry to installation.</p><div className="sh-hero-actions"><Link href="/enquiry" className="sh-button sh-primary">Let’s talk solar <ArrowRight size={19}/></Link><a href="#solutions" className="sh-hero-link">Explore our solutions <ArrowUpRight size={18}/></a></div><div className="sh-hero-promise"><ShieldCheck size={19}/><span>Your rooftop. Your requirements. A plan built around you.</span></div></div>
+      <div className="sh-hero-content"><span className="sh-eyebrow"><span/> SOLAR POWER. EVERYDAY POSSIBILITIES.</span><h1 id="home-title">A brighter future.<br/>Starts on <span>your roof.</span></h1><p>Make your move to solar with a team that connects every step—from your first enquiry to installation.</p><div className="sh-hero-actions"><Link href="/enquiry" scroll={false} className="sh-button sh-primary">Let’s talk solar <ArrowRight size={19}/></Link><a href="#solutions" className="sh-hero-link">Explore our solutions <ArrowUpRight size={18}/></a></div><div className="sh-hero-promise"><ShieldCheck size={19}/><span>Your rooftop. Your requirements. A plan built around you.</span></div></div>
       <div className="sh-hero-bottom"><span><ClipboardCheck size={19}/> Site-led planning</span><span><FileText size={19}/> Clear quotations</span><span><CheckCircle2 size={19}/> Connected project tracking</span></div>
     </section>
 
@@ -59,7 +60,7 @@ export default function HomePage() {
         <article className="sh-highlight-card"><FileText size={32} strokeWidth={1.8} aria-hidden="true"/><h3>Subsidy guidance</h3><p>PM Surya Ghar support</p></article>
         <article className="sh-highlight-card"><Headphones size={32} strokeWidth={1.8} aria-hidden="true"/><h3>Connected support</h3><p>From enquiry to handover</p></article>
       </div>
-      <div className="sh-highlights-cta"><div><Leaf size={31} strokeWidth={1.7} aria-hidden="true"/><p>Your rooftop could be next.<br/><strong>Let’s plan your move to solar.</strong></p></div><Link href="/enquiry" className="sh-button sh-dark">Unlock your solar savings</Link></div>
+      <div className="sh-highlights-cta"><div><Leaf size={31} strokeWidth={1.7} aria-hidden="true"/><p>Your rooftop could be next.<br/><strong>Let’s plan your move to solar.</strong></p></div><Link href="/enquiry" scroll={false} className="sh-button sh-dark">Unlock your solar savings</Link></div>
     </section>
 
     <section className="sh-subsidy" id="solar-subsidy" aria-labelledby="subsidy-heading">
@@ -68,7 +69,7 @@ export default function HomePage() {
           <span className="sh-subsidy-label"><Sun size={20} aria-hidden="true"/> GOVERNMENT SOLAR PROGRAM</span>
           <h2 id="subsidy-heading">PM Surya Ghar <span>Muft Bijli Yojana</span></h2>
           <p>Turn your rooftop into solar savings with subsidy support for eligible homes in Uttar Pradesh.</p>
-          <div className="sh-subsidy-actions"><Link href="/programs" className="sh-button sh-primary">View subsidy details</Link><Link href="/enquiry?property=Residential&program=pm-surya-ghar">Enquire with Samerika</Link></div>
+          <div className="sh-subsidy-actions"><Link href="/programs" className="sh-button sh-primary">View subsidy details</Link><Link href="/enquiry?property=Residential&program=pm-surya-ghar" scroll={false}>Enquire with Samerika</Link></div>
         </div>
         <div className="sh-subsidy-amount">
           <span>COMBINED SUBSIDY IN UTTAR PRADESH</span>
@@ -81,11 +82,11 @@ export default function HomePage() {
 
     <section className="sh-section sh-solutions" id="solutions" aria-labelledby="solutions-heading">
       <div className="sh-solutions-heading"><div><span className="sh-eyebrow">A SOLAR SOLUTION FOR YOUR SPACE</span><h2 id="solutions-heading">Bring solar to <em>your world.</em></h2></div><p>Choose your space. We’ll help you take<br className="sh-solutions-break"/> the next step towards solar.</p></div>
-      <div className="sh-solutions-grid">{offerings.map(({ title, icon: Icon, property, description, note, className, category, features, cta }) => <Link href={`/enquiry?property=${property}`} className={`sh-solution-card ${className}`} key={title} aria-label={`${cta} — send an enquiry`}>
+      <div className="sh-solutions-grid">{offerings.map(({ title, icon: Icon, property, description, note, className, category, features, cta }) => <Link href={`/enquiry?property=${property}`} scroll={false} className={`sh-solution-card ${className}`} key={title} aria-label={`${cta} — send an enquiry`}>
         <div className="sh-solution-top"><span className="sh-solution-icon"><Icon size={34} strokeWidth={1.65}/></span><span className="sh-solution-category">{category}</span><Sun className="sh-solution-sun" size={110} strokeWidth={.8} aria-hidden="true"/></div>
         <div className="sh-solution-body"><span className="sh-solution-note">{note}</span><h3>{title}</h3><p>{description}</p><ul>{features.map(feature=><li key={feature}><Check size={14}/>{feature}</li>)}</ul><div className="sh-solution-cta"><span>{cta}</span><span className="sh-solution-arrow"><ArrowUpRight size={19}/></span></div></div>
       </Link>)}</div>
-      <p className="sh-solutions-help"><MessageCircle size={16}/> Not sure where to start? <Link href="/enquiry">Talk to our solar team <ArrowRight size={14}/></Link></p>
+      <p className="sh-solutions-help"><MessageCircle size={16}/> Not sure where to start? <Link href="/enquiry" scroll={false}>Talk to our solar team <ArrowRight size={14}/></Link></p>
     </section>
 
     <section className="sh-project-gallery" id="featured-projects" aria-labelledby="gallery-heading">
@@ -104,7 +105,7 @@ export default function HomePage() {
     </section>
 
     <section className="sh-section sh-care" id="why-samerika" aria-labelledby="care-heading"><div className="sh-care-layout">
-      <div className="sh-care-intro"><span className="sh-eyebrow">THE SAMERIKA APPROACH</span><h2 id="care-heading">The right team.<br/><em>A simpler<br/> solar journey.</em></h2><p>From understanding your rooftop to keeping your project connected, we bring the details together.</p><Link href="/enquiry" className="sh-button sh-primary">Let’s plan together <ArrowRight size={17}/></Link><span className="sh-care-signoff"><ShieldCheck size={17}/> Clear steps. Connected people.</span><Sun className="sh-care-sun" aria-hidden="true" size={200} strokeWidth={.6}/></div>
+      <div className="sh-care-intro"><span className="sh-eyebrow">THE SAMERIKA APPROACH</span><h2 id="care-heading">The right team.<br/><em>A simpler<br/> solar journey.</em></h2><p>From understanding your rooftop to keeping your project connected, we bring the details together.</p><Link href="/enquiry" scroll={false} className="sh-button sh-primary">Let’s plan together <ArrowRight size={17}/></Link><span className="sh-care-signoff"><ShieldCheck size={17}/> Clear steps. Connected people.</span><Sun className="sh-care-sun" aria-hidden="true" size={200} strokeWidth={.6}/></div>
       <div className="sh-care-grid">{benefits.map(({ icon: Icon, title, text }, index) => <article className="sh-care-card" key={title}><div className="sh-care-card-top"><span className={`sh-care-icon tone-${index}`}><Icon size={24} strokeWidth={1.7}/></span><span className="sh-care-number">0{index+1}</span></div><h3>{title}</h3><p>{text}</p></article>)}</div>
     </div></section>
 
@@ -120,7 +121,7 @@ export default function HomePage() {
             {Icon:FileText,title:'Make an informed choice',text:'Review your proposed system and detailed quotation.'},
             {Icon:ClipboardCheck,title:'Stay connected to progress',text:'Follow the milestones recorded by your company team.'},
           ].map(({Icon,title,text},index)=><li key={title}><span className={`sh-connected-step-icon step-${index}`}><Icon size={21} strokeWidth={1.7}/></span><div><h3>{title}</h3><p>{text}</p></div><span className="sh-connected-step-number">0{index+1}</span></li>)}</ol>
-          <div className="sh-connected-actions"><Link href="/enquiry" className="sh-button sh-primary">Plan my solar project <ArrowRight size={18}/></Link><a href="#how-it-works">How it works <ArrowUpRight size={15}/></a></div>
+          <div className="sh-connected-actions"><Link href="/enquiry" scroll={false} className="sh-button sh-primary">Plan my solar project <ArrowRight size={18}/></Link><a href="#how-it-works">How it works <ArrowUpRight size={15}/></a></div>
           <p className="sh-connected-reassurance"><ShieldCheck size={14}/> No account needed to start an enquiry.</p>
         </div>
       </div>
@@ -137,7 +138,7 @@ export default function HomePage() {
         <div className="sh-roadmap-marker"><span>0{index+1}</span><span className="sh-roadmap-connector" aria-hidden="true"><ArrowRight size={14}/></span></div>
         <article className="sh-roadmap-card"><div className="sh-roadmap-card-top"><span className="sh-roadmap-icon"><Icon size={25} strokeWidth={1.7}/></span><span className="sh-roadmap-stage">STEP 0{index+1}</span></div><span className="sh-roadmap-label">{label}</span><h3>{title}</h3><p>{text}</p><div className="sh-roadmap-detail"><Check size={14}/><span>{detail}</span></div></article>
       </li>)}</ol>
-      <div className="sh-roadmap-footer"><div><span className="sh-roadmap-footer-icon"><MessageCircle size={22}/></span><div><h3>Your first step is a conversation.</h3><p>Share a few details. Our staff will take it from there.</p></div></div><Link href="/enquiry" className="sh-button sh-primary">Start my solar journey <ArrowRight size={18}/></Link></div>
+      <div className="sh-roadmap-footer"><div><span className="sh-roadmap-footer-icon"><MessageCircle size={22}/></span><div><h3>Your first step is a conversation.</h3><p>Share a few details. Our staff will take it from there.</p></div></div><Link href="/enquiry" scroll={false} className="sh-button sh-primary">Start my solar journey <ArrowRight size={18}/></Link></div>
     </section>
 
     <section className="sh-section sh-project" id="project-tracking" aria-labelledby="project-heading">
@@ -159,7 +160,7 @@ export default function HomePage() {
 
     <section className="sh-section sh-answers" id="faqs" aria-labelledby="answers-heading">
       <div className="sh-answers-intro"><span className="sh-eyebrow">GOOD QUESTIONS. CLEAR ANSWERS.</span><h2 id="answers-heading">A little clarity.<br/><em>A confident start.</em></h2><p>From your first enquiry to following your project, here’s what helps to know.</p>
-        <div className="sh-answers-help"><span className="sh-answers-help-icon"><MessageCircle size={24} strokeWidth={1.7}/></span><h3>Have something else in mind?</h3><p>Tell us about your rooftop and your questions. Our company staff will follow up.</p><Link href="/enquiry">Talk to our solar team <ArrowRight size={17}/></Link><span className="sh-answers-help-note"><ShieldCheck size={14}/> No account needed to enquire.</span></div>
+        <div className="sh-answers-help"><span className="sh-answers-help-icon"><MessageCircle size={24} strokeWidth={1.7}/></span><h3>Have something else in mind?</h3><p>Tell us about your rooftop and your questions. Our company staff will follow up.</p><Link href="/enquiry" scroll={false}>Talk to our solar team <ArrowRight size={17}/></Link><span className="sh-answers-help-note"><ShieldCheck size={14}/> No account needed to enquire.</span></div>
       </div>
       <div className="sh-answers-list" aria-label="Frequently asked questions">{faqs.map(([question,answer],index)=><article key={question} className={`sh-answer ${faq===index?'is-open':''}`}>
         <h3><button type="button" aria-expanded={faq===index} aria-controls={`home-faq-${index}`} id={`home-faq-button-${index}`} onClick={()=>setFaq(faq===index?null:index)}><span className="sh-answer-number" aria-hidden="true">0{index+1}</span><span className="sh-answer-question">{question}</span><span className="sh-answer-toggle" aria-hidden="true">{faq===index?<Minus size={17}/>:<Plus size={17}/>}</span></button></h3>
@@ -170,11 +171,11 @@ export default function HomePage() {
     <div className="sh-closing" id="get-in-touch">
       <section className="sh-invitation" aria-labelledby="invitation-heading"><div className="sh-invitation-card">
         <div className="sh-invitation-copy"><span className="sh-invitation-label"><Sun size={19}/> A NEW CHAPTER FOR YOUR ROOFTOP</span><h2 id="invitation-heading">Good energy starts<br/><em>with a conversation.</em></h2><p>Tell us about your space. Let’s explore a solar plan that fits.</p></div>
-        <div className="sh-invitation-action"><Link href="/enquiry" className="sh-button sh-dark">Talk to our solar team <ArrowRight size={19}/></Link><span><ShieldCheck size={15}/> No account needed. Our staff will follow up.</span></div>
+        <div className="sh-invitation-action"><Link href="/enquiry" scroll={false} className="sh-button sh-dark">Talk to our solar team <ArrowRight size={19}/></Link><span><ShieldCheck size={15}/> No account needed. Our staff will follow up.</span></div>
         <Sun className="sh-invitation-sun" size={310} strokeWidth={.65} aria-hidden="true"/>
       </div></section>
 
     </div>
-    <div className="sh-mobile-cta"><Link href="/enquiry" className="sh-button sh-primary">Enquire now <ArrowRight size={17}/></Link></div>
+    <div className="sh-mobile-cta"><Link href="/enquiry" scroll={false} className="sh-button sh-primary">Enquire now <ArrowRight size={17}/></Link></div>
   </main>;
 }

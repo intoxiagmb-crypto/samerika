@@ -96,3 +96,29 @@ test('quotation previews show the saved tax mode on each item and retain histori
  const oldHtml=renderToStaticMarkup(React.createElement(Document,{quote:{data:{...data,...historical}},settings:{}}));
  assert.match(oldHtml,/Tax Included/);assert.doesNotMatch(oldHtml,/Tax Excluded/);
 });
+
+test('quote enquiry shows five accessible bill choices and preserves valid planner defaults',async()=>{
+ const {enquiryInitialValues,billRangeFor}=await import('../lib/enquiry-options.mjs');
+ const Form=component(resolve(root,'app/enquiry/enquiry-form.tsx')).default;
+ const defaults=enquiryInitialValues({property:'Commercial',monthlyBill:'4500',pin:'302001'});
+ const html=renderToStaticMarkup(React.createElement(Form,defaults));
+ assert.equal((html.match(/type="radio"/g)||[]).length,5);
+ assert.match(html,/WhatsApp Number/);assert.match(html,/Village \/ City Name/);assert.match(html,/Submit Details/);
+ assert.match(html,/value="4000-8000"/);assert.match(html,/4,500/);
+ assert.match(html,/name="property" value="Commercial"/);assert.match(html,/name="pin" value="302001"/);
+ assert.match(html,/type="checkbox"[^>]*required=""[^>]*name="contactConsent"/);
+ assert.equal(billRangeFor(1499),'under-1500');assert.equal(billRangeFor(1500),'1500-2500');
+ assert.equal(billRangeFor(2500),'1500-2500');assert.equal(billRangeFor(4000),'2500-4000');assert.equal(billRangeFor(8000),'4000-8000');assert.equal(billRangeFor(8001),'over-8000');
+ assert.deepEqual(enquiryInitialValues({property:'unknown',monthlyBill:'-1',pin:'bad'}),{initialProperty:'Residential',initialMonthlyBill:0,initialPin:'',initialRemarks:''});
+ assert.equal(enquiryInitialValues({program:'pm-surya-ghar',property:'Commercial'}).initialProperty,'Residential');
+});
+
+test('homepage consultation uses the same enquiry form with bill dropdown and optional PIN',()=>{
+ const Form=component(resolve(root,'app/enquiry/enquiry-form.tsx')).default;
+ const html=renderToStaticMarkup(React.createElement(Form,{consultation:true,initialPin:'302001'}));
+ assert.match(html,/Book a FREE Consultation/);
+ assert.match(html,/<select[^>]*name="monthlyBillRange"[^>]*required=""/);
+ assert.doesNotMatch(html,/type="radio"/);
+ assert.match(html,/PIN Code \(optional\)/);assert.match(html,/value="302001"/);
+ assert.match(html,/Village \/ City Name/);assert.match(html,/name="contactConsent"/);
+});

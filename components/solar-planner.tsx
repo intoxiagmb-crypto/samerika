@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { ArrowRight, Building2, Check, House, MapPin, PanelsTopLeft, ShieldCheck, Sun } from 'lucide-react';
 
 const properties = [
@@ -12,6 +13,7 @@ const amounts = [1500, 3000, 5000, 10000];
 
 export default function SolarPlanner() {
   const [bill, setBill] = useState('');
+  const router = useRouter();
   return <section className="sh-section sh-planner-section" id="solar-plan" aria-labelledby="planner-heading">
     <div className="sh-planner-shell">
       <div className="sh-planner-intro">
@@ -28,7 +30,7 @@ export default function SolarPlanner() {
         <Sun className="sh-planner-decoration" size={230} strokeWidth={.6} aria-hidden="true"/>
       </div>
 
-      <form action="/enquiry" method="get" className="sh-planner-fields" aria-label="Start a solar enquiry">
+      <form action="/enquiry" method="get" onSubmit={event => { event.preventDefault(); const params = new URLSearchParams(); new FormData(event.currentTarget).forEach((value, key) => params.set(key, String(value))); router.push(`/enquiry?${params}`, { scroll: false }); }} className="sh-planner-fields" aria-label="Start a solar enquiry">
         <div className="sh-planner-progress" aria-label="Step 1 of 2: rooftop details"><span className="current"><b>1</b> Rooftop details</span><i aria-hidden="true"/><span><b>2</b> Contact details</span></div>
         <div className="sh-planner-form-heading"><span className="sh-eyebrow">LET’S GET STARTED</span><h3>A little about your rooftop.</h3><p>A few details now. A more useful conversation next.</p></div>
         <fieldset className="sh-property-picker"><legend>I’m exploring solar for</legend><div>{properties.map(({value,label,detail,Icon},index)=><label key={value}>

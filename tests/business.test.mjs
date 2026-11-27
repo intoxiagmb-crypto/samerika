@@ -1000,3 +1000,24 @@ test('document and KYC uploads accept exactly 2 MB and reject oversized files wi
   assert.equal((await s.all('SELECT id FROM records')).length,before);
  }
 });
+
+test('quote enquiry stores the selected bill range, consent and planner context for staff follow-up',async()=>{
+ const {s,db}=await setup();
+ await submitPublicEnquiry(db,{...publicEnquiry,email:'',monthlyBillRange:'4000-8000',monthlyBill:4500,contactConsent:true,property:'Commercial'});
+ const saved=await s.one('SELECT * FROM leads WHERE mobile=?',publicEnquiry.mobile);
+ assert.equal(saved.customer_email,'');assert.equal(saved.data.monthlyBillRange,'4000-8000');assert.equal(saved.data.monthlyBill,4500);
+ assert.equal(saved.data.property,'Commercial');assert.equal(saved.data.pin,'302001');
+ assert.equal(saved.data.contactConsent.accepted,true);assert.ok(saved.data.contactConsent.at);
+ assert.match(saved.data.remarks,/₹4000 – ₹8000/);assert.match(saved.data.remarks,/₹4,500/);
+ assert.equal(saved.data.qualificationRequired,true);
+ await submitPublicEnquiry(db,{...publicEnquiry,mobile:'9876501235',email:'',monthlyBillRange:'over-8000',monthlyBill:4500,contactConsent:true});
+ assert.equal((await s.one('SELECT * FROM leads WHERE mobile=?','9876501235')).data.monthlyBill,0);
+});
+
+test('quote enquiry rejects invalid bill ranges, amounts and explicitly declined contact consent',async()=>{
+ const {s,db}=await setup();
+ for(const patch of [{monthlyBillRange:'invalid'},{monthlyBill:-1},{monthlyBill:100000001},{contactConsent:false}]){
+  await assert.rejects(submitPublicEnquiry(db,{...publicEnquiry,...patch}));
+ }
+ assert.equal((await s.all('SELECT * FROM leads')).length,0);
+});

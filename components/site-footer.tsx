@@ -24,13 +24,13 @@ export default function SiteFooter() {
           <a href="/#why-samerika">Why Samerika</a>
           <a href="/#how-it-works">How it works</a>
           <a href="/#faqs">FAQs & answers</a>
-          <Link href="/enquiry">Contact our team</Link>
+          <Link href="/enquiry" scroll={false}>Contact our team</Link>
         </nav>
       </div>
       <div className="sh-site-footer-help">
         <span className="sh-site-footer-help-icon"><MessageCircle size={23} aria-hidden="true"/></span>
         <div className="sh-site-footer-help-copy"><h3>Let’s talk solar.</h3><p>Tell us about your rooftop.<br/>We’ll help you plan the next step.</p></div>
-        <Link href="/enquiry">Send an enquiry</Link>
+        <Link href="/enquiry" scroll={false}>Send an enquiry</Link>
       </div>
     </div>
     <div className="sh-site-footer-bottom"><span>© {new Date().getFullYear()} Samerika Power Private Limited</span><a href="#site-top">Back to top <span><ArrowUp size={18} aria-hidden="true"/></span></a></div>
