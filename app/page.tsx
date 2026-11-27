@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import HomeEnquiryPopup from '@/components/home-enquiry-popup';
 import HomeBannerCarousel from '@/components/home-banner-carousel';
-import HomeQuickActions from '@/components/home-quick-actions';
 import PublicHeader from '@/components/public-header';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -16,7 +15,6 @@ import './home-highlights.css';
 import './home-projects.css';
 import './home-products.css';
 import './home-banners.css';
-import './home-quick-actions.css';
 
 const offerings = [
   { title: 'Homes', icon: House, property: 'Residential', description: 'Make room for clean energy on the roof you already have.', note: 'For your everyday energy', className: 'home', category: 'Residential', features: ['Rooftop assessment', 'Personalised quotation'], cta: 'Explore home solar' },
@@ -51,7 +49,6 @@ export default function HomePage() {
     <PublicHeader/><HomeEnquiryPopup/>
 
     <HomeBannerCarousel/>
-    <HomeQuickActions/>
 
     <section className="sh-highlights" id="solar-highlights" aria-labelledby="highlights-heading">
       <h2 id="highlights-heading">Powering more homes <span>with solar.</span></h2>
