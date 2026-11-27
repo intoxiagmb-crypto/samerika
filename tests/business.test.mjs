@@ -5,7 +5,7 @@ import {adaptDatabase} from '../lib/database.mjs';
 import {migrate} from '../lib/migrations.mjs';
 import { submitPublicEnquiry } from '../lib/enquiries.mjs';
 import { Business } from '../lib/business.mjs';
-import { DEFAULT_SETTINGS,quoteTotal } from '../lib/policy.mjs';
+import { DEFAULT_SETTINGS,PHASES,quoteTotal } from '../lib/policy.mjs';
 const clients=[];
 after(()=>{for(const client of clients)client.close();});
 async function database(){const client=createClient({url:':memory:'});clients.push(client);await migrate(client);return adaptDatabase(client);}
@@ -18,7 +18,7 @@ async function completeProject(s,u,projectId){
  const quote=await s.act(u.SALES,'quote.create',{projectId,productId,installation:10000,discount:1000,validUntil:'2099-12-31',terms:'Test terms'});await s.act(u.ADMIN,'record.update',{id:quote,status:'Approved'});await s.act(u.ADMIN,'record.update',{id:quote,status:'Sent'});await s.act(u.CUSTOMER,'record.update',{id:quote,status:'Accepted',note:'Accepted'});
  for(const documentType of DEFAULT_SETTINGS.requiredDocuments){const id=await s.upload(u.CUSTOMER,{projectId,documentType,name:'test.pdf',mime:'application/pdf',size:100,key:'test-key'});await s.act(u.VERIFIER,'record.update',{id,status:'Verified',note:'Verified against original'});}
  const approval=await s.act(u.MANAGER,'approval.create',{projectId,name:'Bank approval',reference:'BANK-TEST-1',notes:'Submitted'});await s.act(u.MANAGER,'record.update',{id:approval,status:'Approved',note:'Verified approval letter'});
- for(let phase=0;phase<8;phase++)await s.act(u.TECHNICAL,'project.update',{id:projectId,phase,evidence:`Verified checklist ${phase+1}`});
+ for(let phase=0;phase<PHASES.length;phase++)await s.act(u.TECHNICAL,'project.update',{id:projectId,phase,evidence:`Verified checklist ${phase+1}`});
  await s.act(u.MANAGER,'project.update',{id:projectId,quality:'Passed',note:'All quality tests pass'});await s.act(u.MANAGER,'project.update',{id:projectId,handover:true,evidence:'Signed customer handover acknowledgement'});await s.act(u.MANAGER,'project.update',{id:projectId,status:'Completed'});
  return {quote,productId};
 }
@@ -27,9 +27,11 @@ test('duplicate email and mobile cannot silently change ownership',async()=>{con
 test('pending partners cannot submit leads or escalate their own role',async()=>{const {s,u}=await setup();let p=await s.user({userId:'pending',email:'pending@example.test',displayName:'Pending'},'PARTNER');assert.equal(p.status,'Pending');await assert.rejects(s.act(p,'lead.create',lead),/permission/);await s.act(p,'profile',{name:'Pending',role:'ADMIN',company:'Test',mobile:'9999999999',city:'Jaipur',address:'Test'});p=await s.one('SELECT * FROM users WHERE id=?',p.id);assert.equal(p.role,'PARTNER');assert.equal(p.status,'Pending');await assert.rejects(s.act(p,'user.update',{id:p.id,role:'ADMIN',status:'Active'}),/permission/);});
 test('object-level authorization blocks another customer and partner',async()=>{const {s,u}=await setup();const {projectId}=await createProject(s,u);const other=await s.user({userId:'other',email:'other@example.test',displayName:'Other'});assert.equal((await s.snapshot(other)).projects.length,0);await assert.rejects(s.access(other,projectId),/not assigned/);await assert.rejects(s.act(u.PARTNER,'project.update',{id:projectId,status:'Completed'}),/permission/);await assert.rejects(s.act(u.CUSTOMER,'settings',{...DEFAULT_SETTINGS}),/permission/);});
 test('completion gates reject missing records and unapproved incentives',async()=>{const {s,u}=await setup();const {projectId}=await createProject(s,u);await assert.rejects(s.act(u.ADMIN,'project.update',{id:projectId,status:'Completed'}),/survey/);await assert.rejects(s.act(u.ADMIN,'incentive.create',{projectId}),/Complete the project/);await assert.rejects(s.act(u.FINANCE,'payout.create',{incentiveId:'missing'}),/approved incentives/);await assert.rejects(s.act(u.TECHNICAL,'project.update',{id:projectId,phase:3,evidence:'Skipped phases'}),/previous installation phase/);});
-test('failed quality inspection and rejected documents block completion',async()=>{const {s,u}=await setup();const {projectId}=await createProject(s,u);await completeProject(s,u,projectId); // Reset only the test fixture, as completed projects are read-only in the service.
- const p=await s.one('SELECT * FROM projects WHERE id=?',projectId);await s.run('UPDATE projects SET status=?,data=? WHERE id=?','Quality inspection',JSON.stringify({...p.data,quality:'Failed'}),projectId);await assert.rejects(s.act(u.MANAGER,'project.update',{id:projectId,status:'Completed'}),/Quality inspection/);
- await s.act(u.MANAGER,'project.update',{id:projectId,quality:'Passed',note:'Rectification confirmed'});const doc=await s.one("SELECT * FROM records WHERE kind='document' AND project_id=?",projectId);await s.act(u.VERIFIER,'record.update',{id:doc.id,status:'Rejected',note:'Unreadable document'});await assert.rejects(s.act(u.MANAGER,'project.update',{id:projectId,status:'Completed'}),/Verify the required document/);});
+test('removed quality checks no longer block completion while document verification remains required',async()=>{const {s,u}=await setup();const {projectId}=await createProject(s,u);await completeProject(s,u,projectId);
+ const p=await s.one('SELECT * FROM projects WHERE id=?',projectId);await s.run('UPDATE projects SET status=?,data=? WHERE id=?','Installation',JSON.stringify({...p.data,quality:'Failed'}),projectId);
+ const doc=await s.one("SELECT * FROM records WHERE kind='document' AND project_id=?",projectId);await s.act(u.VERIFIER,'record.update',{id:doc.id,status:'Rejected',note:'Unreadable document'});await assert.rejects(s.act(u.MANAGER,'project.update',{id:projectId,status:'Completed'}),/Verify the required document/);
+ await s.act(u.VERIFIER,'record.update',{id:doc.id,status:'Verified'});await s.act(u.MANAGER,'project.update',{id:projectId,status:'Completed'});
+ assert.equal((await s.one('SELECT * FROM projects WHERE id=?',projectId)).status,'Completed');});
 test('cash projects have no bank prerequisite; finance cannot remove bank approval',async()=>{const {s,u}=await setup();const id=await s.act(u.ADMIN,'lead.create',{...lead,finance:'Cash'});const projectId=await s.act(u.ADMIN,'project.create',{leadId:id});const p=await s.one('SELECT * FROM projects WHERE id=?',projectId);assert.deepEqual(p.data.requiredApprovals,[]);await assert.rejects(s.act(u.ADMIN,'approval.create',{projectId,name:'Bank approval',reference:'invalid'}),/Cash projects/);});
 test('quotation totals use integer minor units and reject invalid inputs',()=>{assert.deepEqual(quoteTotal({unitPrice:60000,capacity:3,installation:10000,discount:1000,taxRate:5}),{subtotal:18900000,tax:945000,total:19845000});assert.throws(()=>quoteTotal({unitPrice:100,capacity:1,discount:1000}),/Discount/);assert.throws(()=>quoteTotal({unitPrice:NaN,capacity:3}),/valid positive/);});
 test('quote snapshots survive catalogue changes and rejected quote is not accepted',async()=>{const {s,u}=await setup();const {projectId}=await createProject(s,u);const productId=await s.act(u.ADMIN,'product.create',{name:'Kit',brand:'Test',category:'Solar kit',capacity:3,price:150000,system:'On-grid',warranty:'Test'});const id=await s.act(u.ADMIN,'quote.create',{projectId,productId,validUntil:'2099-12-31'});const before=await s.one('SELECT * FROM records WHERE id=?',id);await s.act(u.ADMIN,'record.update',{id:productId,status:'Archived'});assert.equal((await s.one('SELECT * FROM records WHERE id=?',id)).amount,before.amount);assert.equal((await s.snapshot(u.CUSTOMER)).records.some(r=>r.id===id),false);await s.act(u.ADMIN,'record.update',{id,status:'Approved'});await s.act(u.ADMIN,'record.update',{id,status:'Sent'});await s.act(u.CUSTOMER,'record.update',{id,status:'Rejected',note:'Revise scope'});await assert.rejects(s.act(u.CUSTOMER,'record.update',{id,status:'Accepted'}),/Only a sent quotation/);});
@@ -227,14 +229,12 @@ test('inline installation statuses save history, enforce order and preserve comp
  await phase(1,'Pending');await phase(0,'Pending');
  assert.deepEqual((await get()).data.phases[0].history.map(entry=>entry.status),['Processing','Completed','Pending']);
  for(let i=0;i<6;i++)await phase(i,'Completed');
- await assert.rejects(phase(6,'Completed'),/inspection findings/);
+ await assert.rejects(phase(6,'Completed'),/customer acknowledgement/);
  p=await get();await assert.rejects(s.act(u.TECHNICAL,'project.update',{id:projectId,version:p.version,phase:6,phaseStatus:'Completed',evidence:'Report'}),e=>e.status===403);
- await phase(6,'Completed','Inspection passed, report QA-1');
- await assert.rejects(phase(7,'Completed'),/customer acknowledgement/);
- await phase(7,'Completed','Customer signed HANDOVER-1');
- p=await get();assert.equal(p.data.quality,'Passed');assert.equal(p.data.handover,true);assert.equal(p.data.handoverEvidence,'Customer signed HANDOVER-1');
+ await phase(6,'Completed','Customer signed HANDOVER-1');
+ p=await get();assert.equal(p.data.handover,true);assert.equal(p.data.handoverEvidence,'Customer signed HANDOVER-1');
  await assert.rejects(s.act(u.MANAGER,'project.update',{id:projectId,version:p.version,status:'Completed'}),/survey/);
- await phase(7,'Pending');assert.equal((await get()).data.handover,false);
+ await phase(6,'Pending');assert.equal((await get()).data.handover,false);
 });
 
 test('quick tracking records the India date and employee without requiring another form',async()=>{
@@ -397,4 +397,35 @@ test('Cash needs no approval reference and respects permissions and read-only pr
  p=await s.one('SELECT * FROM projects WHERE id=?',projectId);
  await assert.rejects(s.act(u.ADMIN,'project.approval',{...patch,version:p.version}),/read-only/);
  assert.equal((await s.one('SELECT * FROM leads WHERE id=?',leadId)).data.finance,'Finance');
+});
+
+test('legacy quality phase is preserved but no longer blocks handover, tracking or completion',async()=>{
+ const {s,u}=await setup();const {projectId}=await createProject(s,u);await completeProject(s,u,projectId);
+ let p=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ const legacyQuality={name:'Quality inspection',status:'Pending',evidence:'Old inspection record',history:[{status:'Processing',by:'previous-reviewer'}]};
+ const phases=[...p.data.phases.slice(0,6),legacyQuality,{...p.data.phases[6],status:'Pending'}];
+ await s.run('UPDATE projects SET status=?,data=? WHERE id=?','Installation',JSON.stringify({...p.data,phases,quality:'Failed',handover:false,handoverEvidence:''}),projectId);
+ p=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ await s.act(u.MANAGER,'project.update',{id:projectId,version:p.version,phase:7,phaseStatus:'Processing'});
+ p=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ await assert.rejects(s.act(u.MANAGER,'project.update',{id:projectId,version:p.version,phase:7,phaseStatus:'Completed'}),/customer acknowledgement/);
+ await s.act(u.MANAGER,'project.update',{id:projectId,version:p.version,phase:7,phaseStatus:'Completed',evidence:'Customer signed handover'});
+ for(const stepId of ['site_survey','quotation','order_confirmation','registration','installation']){
+  p=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+  await s.act(u.SALES,'project.tracking',{id:projectId,version:p.version,stepId,status:'Completed',quick:true});
+ }
+ p=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ assert.deepEqual(p.data.phases[6],legacyQuality);assert.equal(p.data.phases[7].status,'Completed');
+ await s.act(u.MANAGER,'project.update',{id:projectId,version:p.version,status:'Completed'});
+ assert.equal((await s.one('SELECT * FROM projects WHERE id=?',projectId)).status,'Completed');
+});
+
+test('new projects and legacy company settings use seven installation phases',async()=>{
+ const {s,u}=await setup();const {projectId}=await createProject(s,u);
+ const p=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ assert.equal(p.data.phases.length,7);assert.equal(p.data.phases[6].name,'Customer handover');assert.ok(!p.data.phases.some(phase=>phase.name==='Quality inspection'));
+ const legacySettings={...DEFAULT_SETTINGS,phases:[...PHASES.slice(0,6),'Quality inspection',PHASES[6]]};
+ await s.run("UPDATE settings SET data=? WHERE key='company'",JSON.stringify(legacySettings));
+ assert.deepEqual((await s.settings()).phases,PHASES);
+ await s.act(u.ADMIN,'settings',legacySettings);assert.deepEqual((await s.settings()).phases,PHASES);
 });

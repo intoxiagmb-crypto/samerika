@@ -66,12 +66,14 @@ export default function ProjectTimeline({ project, records, requiredDocuments, r
       cash ? <small>Cash payment · bank approval is not required.</small> : manage && live ? input(`approval-${name}`, `${name} reference (required to complete)`, approval?.data.reference || '') : approval?.data.reference && <small>{approval.data.reference}</small>);
   });
   const phases = project.data.phases.map((phase: Row, index: number) => {
+    if (phase.name === 'Quality inspection') return null;
+    const handover = phase.name === 'Customer handover';
     const name = phase.name === 'Meter & grid connection' ? 'Net Metering' : phase.name === 'Testing & commissioning' ? 'DCR' : phase.name;
-    const unlocked = project.data.phases.slice(0, index).every((item: Row) => item.status === 'Completed');
-    const editable = index >= 6 ? manage : technical;
+    const unlocked = project.data.phases.slice(0, index).filter((item: Row) => item.name !== 'Quality inspection').every((item: Row) => item.status === 'Completed');
+    const editable = handover ? manage : technical;
     return row(`phase-${index}`, name, phase.status,
       selector(name, phase.status, editable, status => { void onUpdate('project.update', { ...extra, phase: index, phaseStatus: status, evidence: draft(`phase-${index}`, phase.evidence || '') }, `${name}: ${status}`); }, !unlocked),
-      editable && live && (index >= 6 ? input(`phase-${index}`, index === 6 ? 'Inspection findings (required to complete)' : 'Customer acknowledgement (required to complete)', phase.evidence || '') : <details className="project-step-notes"><summary>Notes / evidence (optional)</summary>{input(`phase-${index}`, `${name} evidence`, phase.evidence || '')}</details>),
+      editable && live && (handover ? input(`phase-${index}`, 'Customer acknowledgement (required to complete)', phase.evidence || '') : <details className="project-step-notes"><summary>Notes / evidence (optional)</summary>{input(`phase-${index}`, `${name} evidence`, phase.evidence || '')}</details>),
       !unlocked && editable && live ? 'Complete the previous installation phase first.' : phase.updatedBy ? `Updated by ${phase.updatedBy}` : undefined);
   });
   return <section className="project-timeline" aria-labelledby="project-timeline-title" aria-busy={saving}>
