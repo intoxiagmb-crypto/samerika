@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { ArrowUpRight, ArrowRight, CalendarDays, ChevronRight, Clock3, FileText, FolderKanban, Plus, Sun, Wallet, Zap, CheckCircle2 } from 'lucide-react';
+import ProjectStatus from './project-status';
 import SolarLandscape from './solar-landscape';
 
 type Row = Record<string, any>;
@@ -21,8 +22,8 @@ export default function PortalOverview({ data, onNavigate, onCreate, onDetail }:
   const completed = data.projects.filter(p => p.status === 'Completed');
   const newLeads = data.leads.filter(l => l.status === 'New');
   const income = data.records.filter(r => agent ? r.kind === 'incentive' && r.status === 'Approved' : r.kind === 'payment').reduce((sum, r) => sum + r.amount, 0);
-  const stages = ['Survey', 'Quotation', 'Documentation', 'Approvals', 'Installation', 'Completed'];
-  const counts = stages.map(stage => projects.filter(p => p.status === stage).length);
+  const stages = ['Survey', 'Quotation', 'Documentation', 'Approvals', 'Installation', 'Subsidy', 'Handover', 'Completed', 'On Hold', 'Delayed', 'Cancelled'].filter(stage => ['Survey', 'Quotation', 'Documentation', 'Approvals', 'Installation', 'Completed'].includes(stage) || projects.some(p => p.progress?.group === stage));
+  const counts = stages.map(stage => projects.filter(p => (p.progress?.group || p.status) === stage).length);
   const maxCount = Math.max(1, ...counts);
   const dates = [
     ...data.leads.filter(l => l.data.followUp && l.status !== 'Converted').map(l => ({ id: l.id, title: l.name, date: l.data.followUp, label: 'Customer follow-up', row: l, type: 'lead' })),
@@ -54,7 +55,7 @@ export default function PortalOverview({ data, onNavigate, onCreate, onDetail }:
           <div className="overview-card performance-card">
             <span className="chart-caption">Your solar projects</span>
             <div className="performance-top"><div><strong>{projects.length}</strong><span>projects in your<br/>selected period</span></div><button onClick={() => onNavigate('projects')}>All projects <ArrowUpRight size={12}/></button></div>
-            <div className="vertical-chart" role="img" aria-label={stages.map((stage, i) => `${stage}: ${counts[i]}`).join(', ')}>
+            <div className="vertical-chart" style={{ gridTemplateColumns: `repeat(${stages.length}, minmax(42px, 1fr))`, overflowX: 'auto' }} role="img" aria-label={stages.map((stage, i) => `${stage}: ${counts[i]}`).join(', ')}>
               {stages.map((stage, i) => <div className="chart-column" key={stage}><span>{counts[i]}</span><div className="column-track"><i style={{ height: `${counts[i] / maxCount * 100}%` }}/></div><small>{stage === 'Documentation' ? 'Documents' : stage}</small></div>)}
             </div>
             <div className="chart-legend"><span/><span>Projects by current stage</span><b>{period === 'month' ? 'THIS MONTH' : 'ALL TIME'}</b></div>
@@ -64,14 +65,14 @@ export default function PortalOverview({ data, onNavigate, onCreate, onDetail }:
         </section>
 
         <section className="progress-section">
-          <div className="overview-section-title"><h3>Installation progress</h3><button onClick={() => onNavigate('projects')} aria-label="View all project progress"><ArrowUpRight size={15}/></button></div>
+          <div className="overview-section-title"><h3>Project progress</h3><button onClick={() => onNavigate('projects')} aria-label="View all project progress"><ArrowUpRight size={15}/></button></div>
           <div className="overview-card progress-card">
-            <p className="progress-note">Completed installation steps</p>
+            <p className="progress-note">Completed timeline steps</p>
             <div className="progress-ring-grid">{data.projects.filter(p => p.status !== 'Cancelled').slice(0, 6).map(p => {
-              const phases = p.data.phases || [];
+              const phases = (p.data.phases || []).filter((phase: Row) => phase.name !== 'Quality inspection');
               const count = phases.filter((phase: Row) => phase.status === 'Completed').length;
-              const percent = phases.length ? Math.round(count / phases.length * 100) : 0;
-              return <button className="progress-project" key={p.id} onClick={() => onDetail(p, 'project')} aria-label={`${p.data.name}: ${percent}% of installation steps completed`}><span className="progress-ring"><svg viewBox="0 0 84 84" aria-hidden="true"><circle className="ring-track" cx="42" cy="42" r="33"/><circle className="ring-fill" cx="42" cy="42" r="33" pathLength="100" strokeDasharray={`${percent} 100`}/></svg><strong>{percent}<small>%</small></strong></span><b>{p.data.name}</b><small>{p.data.capacity} kW · {p.status}</small></button>;
+              const percent = p.progress?.percent ?? (phases.length ? Math.round(count / phases.length * 100) : 0);
+              return <button className="progress-project" key={p.id} onClick={() => onDetail(p, 'project')} aria-label={`${p.data.name}: ${percent}% of timeline steps completed`}><span className="progress-ring"><svg viewBox="0 0 84 84" aria-hidden="true"><circle className="ring-track" cx="42" cy="42" r="33"/><circle className="ring-fill" cx="42" cy="42" r="33" pathLength="100" strokeDasharray={`${percent} 100`}/></svg><strong>{percent}<small>%</small></strong></span><b>{p.data.name}</b><small>{p.data.capacity} kW</small>{p.progress ? <ProjectStatus progress={p.progress}/> : <small>{p.status}</small>}</button>;
             })}</div>
             {!data.projects.length && <div className="small-empty"><Sun size={25}/><p>Project progress appears once a lead is converted.</p></div>}
             <div className="capacity-note"><Sun size={20}/><div><strong>{completed.reduce((sum, p) => sum + p.data.capacity, 0)} kW</strong><span>Commissioned capacity</span></div></div>

@@ -505,3 +505,31 @@ test('Documentation completion follows the latest uploaded file instead of an ol
  p=await s.one('SELECT * FROM projects WHERE id=?',projectId);
  await assert.rejects(s.act(u.MANAGER,'project.update',{id:projectId,version:p.version,status:'Completed'}),/Verify the required document/);
 });
+
+test('project home status follows timeline saves, document reviews and approval changes',async()=>{
+ const {s,u}=await setup();const {projectId}=await createProject(s,u);
+ const get=()=>s.one('SELECT * FROM projects WHERE id=?',projectId);
+ const progress=async(role='ADMIN')=>(await s.snapshot(u[role])).projects.find(project=>project.id===projectId).progress;
+ const track=async(stepId,status)=>{const p=await get();await s.act(u.ADMIN,'project.tracking',{id:projectId,version:p.version,stepId,status,quick:true});};
+ assert.equal((await progress()).text,'Site Survey · Pending');
+ await track('site_survey','In Progress');assert.equal((await progress()).text,'Site Survey · Processing');
+ await track('site_survey','Completed');assert.equal((await progress()).text,'Quotation · Pending');
+ await track('quotation','Completed');await track('order_confirmation','Completed');assert.equal((await progress()).text,'Documentation · Pending');
+ let p=await get();await s.act(u.VERIFIER,'project.documentation',{id:projectId,version:p.version,status:'Processing',documents:[]});
+ assert.equal((await progress()).text,'Documentation · Processing');
+ const documents=[];for(const documentType of DEFAULT_SETTINGS.requiredDocuments){const id=await s.upload(u.CUSTOMER,{projectId,documentType,name:'file.pdf',mime:'application/pdf',size:30,key:'test-private'});documents.push({id,version:1});}
+ p=await get();await s.act(u.VERIFIER,'project.documentation',{id:projectId,version:p.version,status:'Completed',documents});
+ assert.equal((await progress()).text,'Customer Registration · Pending');
+ await track('registration','Completed');assert.equal((await progress()).text,'Bank approval · Pending');
+ p=await get();await s.act(u.MANAGER,'project.approval',{id:projectId,version:p.version,name:'Bank approval',status:'Cash'});
+ assert.equal((await progress()).text,'Site preparation · Pending');
+ for(let phase=0;phase<6;phase++){p=await get();await s.act(u.MANAGER,'project.update',{id:projectId,version:p.version,phase,phaseStatus:'Completed'});}
+ assert.equal((await progress()).text,'Subsidy · Pending');
+ p=await get();await s.act(u.MANAGER,'project.update',{id:projectId,version:p.version,subsidyStatus:'Processing'});
+ assert.equal((await progress()).text,'Subsidy · Processing');
+ assert.equal((await progress('PARTNER')).text,'Subsidy · Processing');
+ p=await get();await s.act(u.MANAGER,'project.update',{id:projectId,version:p.version,subsidyStatus:'Completed'});
+ assert.equal((await progress()).text,'Customer handover · Pending');
+ p=await get();await s.act(u.MANAGER,'project.update',{id:projectId,version:p.version,phase:6,phaseStatus:'Completed',evidence:'Customer signature'});
+ assert.equal((await progress()).label,'Ready to complete');assert.equal((await get()).status,'Installation');
+});

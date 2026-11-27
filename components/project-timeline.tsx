@@ -3,6 +3,7 @@
 import { Fragment, useState } from 'react';
 import { Check, Clock3, LoaderCircle, AlertCircle, Upload } from 'lucide-react';
 import { requiredProjectDocuments, documentationStatus } from '@/lib/documentation.mjs';
+import { installationPhaseLabel } from '@/lib/project-progress.mjs';
 import { trackingSteps } from '@/lib/application-tracking.mjs';
 
 // The portal snapshot contains versioned JSON records shared with the business service.
@@ -82,7 +83,7 @@ export default function ProjectTimeline({ project, records, requiredDocuments, r
   const phases = project.data.phases.map((phase: Row, index: number) => {
     if (phase.name === 'Quality inspection') return null;
     const handover = phase.name === 'Customer handover';
-    const name = phase.name === 'Meter & grid connection' ? 'Net Metering' : ['Testing & commissioning', 'DCR'].includes(phase.name) ? 'DCR Registration' : phase.name;
+    const name = installationPhaseLabel(phase.name);
     const unlocked = project.data.phases.slice(0, index).filter((item: Row) => item.name !== 'Quality inspection').every((item: Row) => item.status === 'Completed');
     const editable = handover ? manage : technical;
     const phaseRow = row(`phase-${index}`, name, phase.status,
