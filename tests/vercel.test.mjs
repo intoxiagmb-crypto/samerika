@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createClient } from '@libsql/client';
@@ -27,7 +27,9 @@ test('migrations are repeatable and failed batches roll back all their writes', 
   try {
     await migrate(client); await migrate(client);
     const db = adaptDatabase(client);
-    assert.equal((await db.prepare('SELECT count(*) AS n FROM solaris_migrations').first()).n, 4);
+    const expected = (await readdir(new URL('../drizzle/', import.meta.url))).filter(name => name.endsWith('.sql')).sort();
+    const applied = await db.prepare('SELECT name FROM solaris_migrations ORDER BY name').all();
+    assert.deepEqual(applied.results.map(row => row.name), expected);
     await assert.rejects(db.batch([
       db.prepare('INSERT INTO settings VALUES(?,?)').bind('atomic','{}'),
       db.prepare('INSERT INTO settings VALUES(?,?)').bind('atomic','{}'),

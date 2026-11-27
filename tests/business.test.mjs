@@ -215,3 +215,148 @@ test('quotation links require publication and project access, omit internal fiel
  await s.act(u.CUSTOMER,'record.update',{id,status:'Rejected',note:'Needs revision'});
  assert.equal(await getSharedQuotation(db,second.path.split('/').pop()),null);
 });
+
+test('inline installation statuses save history, enforce order and preserve completion checks', async()=>{
+ const {s,u}=await setup();const {projectId}=await createProject(s,u);
+ const get=()=>s.one('SELECT * FROM projects WHERE id=?',projectId);
+ const phase=async(index,status,evidence='')=>{const p=await get();return s.act(u.MANAGER,'project.update',{id:projectId,version:p.version,phase:index,phaseStatus:status,evidence});};
+ await phase(0,'Processing');let p=await get();assert.equal(p.data.phases[0].status,'Processing');assert.equal(p.status,'Installation');
+ await assert.rejects(phase(1,'Processing'),/previous installation phase/);
+ await phase(0,'Completed');await phase(1,'Processing');
+ await assert.rejects(phase(0,'Pending'),/Reset later installation phases/);
+ await phase(1,'Pending');await phase(0,'Pending');
+ assert.deepEqual((await get()).data.phases[0].history.map(entry=>entry.status),['Processing','Completed','Pending']);
+ for(let i=0;i<6;i++)await phase(i,'Completed');
+ await assert.rejects(phase(6,'Completed'),/inspection findings/);
+ p=await get();await assert.rejects(s.act(u.TECHNICAL,'project.update',{id:projectId,version:p.version,phase:6,phaseStatus:'Completed',evidence:'Report'}),e=>e.status===403);
+ await phase(6,'Completed','Inspection passed, report QA-1');
+ await assert.rejects(phase(7,'Completed'),/customer acknowledgement/);
+ await phase(7,'Completed','Customer signed HANDOVER-1');
+ p=await get();assert.equal(p.data.quality,'Passed');assert.equal(p.data.handover,true);assert.equal(p.data.handoverEvidence,'Customer signed HANDOVER-1');
+ await assert.rejects(s.act(u.MANAGER,'project.update',{id:projectId,version:p.version,status:'Completed'}),/survey/);
+ await phase(7,'Pending');assert.equal((await get()).data.handover,false);
+});
+
+test('quick tracking records the India date and employee without requiring another form',async()=>{
+ const {s,u}=await setup();const {projectId}=await createProject(s,u);
+ const quick=async(stepId,status)=>{const p=await s.one('SELECT * FROM projects WHERE id=?',projectId);return s.act(u.SALES,'project.tracking',{id:projectId,version:p.version,stepId,status,quick:true,eventDate:'2000-01-01',updatedBy:'Forged'});};
+ await quick('site_survey','In Progress');await quick('site_survey','Completed');
+ const p=await s.one('SELECT * FROM projects WHERE id=?',projectId);const step=p.data.tracking.steps.site_survey;
+ assert.equal(step.updatedBy,'SALES');assert.equal(step.eventDate,new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'}));assert.equal(step.note,'');assert.equal(step.history.length,2);
+ await assert.rejects(quick('registration','Completed'),/earlier tracking stages/);
+ await quick('quotation','Completed');await quick('order_confirmation','Completed');await quick('registration','Completed');
+ await assert.rejects(quick('installation','Completed'),/installation phases/);
+});
+
+test('inline approval saves one real approval with reference, history and stale-update protection',async()=>{
+ const {s,u}=await setup();const {projectId}=await createProject(s,u);
+ const p=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ const first={id:projectId,version:p.version,name:'Bank approval',status:'Processing'};
+ for(const role of ['CUSTOMER','PARTNER','SALES','TECHNICAL','VERIFIER','FINANCE'])await assert.rejects(s.act(u[role],'project.approval',first),e=>e.status===403);
+ const id=await s.act(u.MANAGER,'project.approval',first);
+ await assert.rejects(s.act(u.MANAGER,'project.approval',first),e=>e.status===409);
+ const fresh=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ await assert.rejects(s.act(u.MANAGER,'project.approval',{...first,version:fresh.version,status:'Approved'}),/approval reference/);
+ await s.act(u.MANAGER,'project.approval',{...first,version:fresh.version,status:'Approved',reference:'BANK-ACK-1'});
+ const approval=await s.one('SELECT * FROM records WHERE id=?',id);assert.equal(approval.status,'Approved');assert.equal(approval.data.reference,'BANK-ACK-1');assert.equal(approval.data.history.length,2);
+ assert.equal((await s.all("SELECT * FROM records WHERE project_id=? AND kind='approval'",projectId)).length,1);
+ const current=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ await assert.rejects(s.act(u.MANAGER,'project.approval',{...first,version:current.version,name:'Invented approval'}),/required project approval/);
+ await s.act(u.MANAGER,'project.update',{id:projectId,version:current.version,status:'Cancelled',note:'Cancelled by customer'});
+ const cancelled=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ await assert.rejects(s.act(u.MANAGER,'project.approval',{...first,version:cancelled.version}),/read-only/);
+});
+
+test('uploaded documents can move between pending, processing and completed with reviewer permissions',async()=>{
+ const {s,u}=await setup();const {projectId}=await createProject(s,u);
+ const id=await s.upload(u.MANAGER,{projectId,documentType:'Electricity bill',name:'bill.pdf',mime:'application/pdf',size:20,key:'bill-key'});
+ await assert.rejects(s.act(u.MANAGER,'record.update',{id,status:'Verified'}),e=>e.status===403);
+ for(const status of ['Under Review','Verified','Pending']){const r=await s.one('SELECT * FROM records WHERE id=?',id);await s.act(u.VERIFIER,'record.update',{id,version:r.version,status});assert.equal((await s.one('SELECT * FROM records WHERE id=?',id)).status,status);}
+});
+
+test('customer profile stays editable in every lead status without changing workflow or ownership',async()=>{
+ const {s,u}=await setup();const {leadId,projectId}=await createProject(s,u);
+ const originalProject=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ for(const status of ['New','Assigned','Contacted','Interested','Qualified','Site Survey','Quotation','Converted','Follow-up Required','On Hold','Lost','Rejected','Duplicate','Cancelled']){
+  await s.run('UPDATE leads SET status=? WHERE id=?',status,leadId);
+  const before=await s.one('SELECT * FROM leads WHERE id=?',leadId);
+  await s.act(u.SALES,'lead.profile',{id:leadId,version:before.version,name:`Customer ${status}`,address:'Updated installation address',status:'New',assignedTo:u.ADMIN.id,partner_id:null,capacity:99,qualificationRequired:false});
+  const after=await s.one('SELECT * FROM leads WHERE id=?',leadId);
+  assert.equal(after.status,status);assert.equal(after.assigned_to,before.assigned_to);assert.equal(after.partner_id,before.partner_id);assert.equal(after.owner_id,before.owner_id);
+  assert.equal(after.data.capacity,before.data.capacity);assert.equal(after.data.name,after.name);assert.equal(after.version,before.version+1);
+  const project=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+  assert.equal(project.data.name,after.name);assert.equal(project.data.address,'Updated installation address');
+  assert.equal(project.status,originalProject.status);assert.deepEqual(project.data.phases,originalProject.data.phases);
+ }
+ assert.equal((await s.all("SELECT * FROM audit WHERE entity_id=? AND action='lead.profile'",leadId)).length,14);
+});
+
+test('profile corrections preserve quote snapshots and customer account access and reject stale saves',async()=>{
+ const {s,u}=await setup();const {leadId,projectId}=await createProject(s,u);
+ const oldQuote=await s.createRecord(u.ADMIN,'quote',projectId,'Draft',{customer:lead.name,customerDetails:{name:lead.name,email:lead.email}});
+ const before=await s.one('SELECT * FROM leads WHERE id=?',leadId);
+ await s.act(u.MANAGER,'lead.profile',{id:leadId,version:before.version,name:'Corrected Customer',mobile:'9876543222',email:'  corrected@example.test  ',city:'Udaipur',state:'Rajasthan',pin:'313001'});
+ const after=await s.one('SELECT * FROM leads WHERE id=?',leadId);
+ assert.equal(after.customer_email,'corrected@example.test');assert.equal(after.data.email,after.customer_email);assert.equal(after.mobile,'9876543222');assert.equal(after.data.mobile,after.mobile);
+ assert.equal((await s.one('SELECT * FROM records WHERE id=?',oldQuote)).data.customer,lead.name);
+ assert.ok((await s.snapshot(u.CUSTOMER)).leads.some(item=>item.id===leadId));
+ const other=await s.user({userId:'corrected-contact',email:'corrected@example.test',displayName:'Different account'});
+ await assert.rejects(s.access(other,projectId),e=>e.status===403);
+ const savedProject=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ await assert.rejects(s.act(u.MANAGER,'lead.profile',{id:leadId,version:before.version,name:'Stale edit'}),e=>e.status===409);
+ assert.deepEqual(await s.one('SELECT * FROM projects WHERE id=?',projectId),savedProject);
+});
+
+test('customer profile enforces assignment, field validation and duplicate contact checks',async()=>{
+ const {s,u}=await setup();const {leadId}=await createProject(s,u);
+ const before=await s.one('SELECT * FROM leads WHERE id=?',leadId);
+ const patch={id:leadId,version:before.version,name:'Updated customer'};
+ for(const role of ['CUSTOMER','PARTNER','TECHNICAL','VERIFIER','FINANCE'])await assert.rejects(s.act(u[role],'lead.profile',patch),e=>e.status===403);
+ await assert.rejects(s.act({...u.SALES,id:'unassigned-sales'},'lead.profile',patch),e=>e.status===403);
+ for(const values of [{mobile:'123'},{email:'invalid'},{pin:'123'},{name:''},{monthlyBill:-1},{address:''}])await assert.rejects(s.act(u.ADMIN,'lead.profile',{...patch,...values}));
+ await s.act(u.ADMIN,'lead.create',{...lead,name:'Other customer',mobile:'9876543333',email:'other@example.test'});
+ for(const values of [{mobile:'9876543333'},{email:'other@example.test'}])await assert.rejects(s.act(u.ADMIN,'lead.profile',{...patch,...values}),e=>e.status===409);
+ assert.deepEqual(await s.one('SELECT * FROM leads WHERE id=?',leadId),before);
+});
+
+test('editing a website contact does not require missing survey details or qualify the lead',async()=>{
+ const {s,db,u}=await setup();await submitPublicEnquiry(db,{...publicEnquiry,email:'',pin:''});
+ const before=await s.one('SELECT * FROM leads WHERE mobile=?',publicEnquiry.mobile);
+ await s.act(u.SALES,'lead.profile',{id:before.id,version:before.version,name:'Corrected website name',email:'',address:'',state:'',pin:''});
+ const after=await s.one('SELECT * FROM leads WHERE id=?',before.id);
+ assert.equal(after.name,'Corrected website name');assert.equal(after.customer_email,'');assert.equal(after.data.qualificationRequired,true);assert.equal(after.data.capacity,null);
+ await assert.rejects(s.act(u.SALES,'project.create',{leadId:before.id}),/Confirm site details/);
+});
+
+test('customer bill and application numbers save as text and carry into the converted project',async()=>{
+ const {s,u}=await setup();
+ const leadId=await s.act(u.ADMIN,'lead.create',{...lead,customerBillNumber:' 0012/BILL-9 ',applicationNumber:' 0007/APP-5 '});
+ const saved=await s.one('SELECT * FROM leads WHERE id=?',leadId);
+ assert.equal(saved.data.customerBillNumber,'0012/BILL-9');assert.equal(saved.data.applicationNumber,'0007/APP-5');
+ const projectId=await s.act(u.ADMIN,'project.create',{leadId});
+ const project=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ assert.equal(project.data.customerBillNumber,'0012/BILL-9');assert.equal(project.data.tracking.applicationNumber,'0007/APP-5');
+});
+
+test('profile and tracking application numbers stay synchronized without replacing stage history',async()=>{
+ const {s,u}=await setup();const {leadId,projectId}=await createProject(s,u);
+ let project=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ await s.act(u.ADMIN,'project.tracking',{id:projectId,version:project.version,stepId:'site_survey',status:'Completed',eventDate:'2026-01-01',note:'Survey recorded'});
+ const before=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ let customer=await s.one('SELECT * FROM leads WHERE id=?',leadId);
+ await s.act(u.SALES,'lead.profile',{id:leadId,version:customer.version,customerBillNumber:'00012345',applicationNumber:'APP-NEW'});
+ project=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ assert.equal(project.data.customerBillNumber,'00012345');assert.equal(project.data.tracking.applicationNumber,'APP-NEW');assert.deepEqual(project.data.tracking.steps,before.data.tracking.steps);
+ customer=await s.one('SELECT * FROM leads WHERE id=?',leadId);
+ await s.act(u.MANAGER,'project.tracking',{id:projectId,version:project.version,applicationNumber:'APP-CORRECTED'});
+ let updated=await s.one('SELECT * FROM leads WHERE id=?',leadId);
+ assert.equal(updated.data.applicationNumber,'APP-CORRECTED');assert.equal(updated.version,customer.version+1);
+ await assert.rejects(s.act(u.SALES,'lead.profile',{id:leadId,version:customer.version,applicationNumber:'STALE'}),e=>e.status===409);
+ await s.act(u.SALES,'lead.profile',{id:leadId,version:updated.version,remarks:'Contact confirmed'});
+ assert.equal((await s.one('SELECT * FROM projects WHERE id=?',projectId)).data.tracking.applicationNumber,'APP-CORRECTED');
+ updated=await s.one('SELECT * FROM leads WHERE id=?',leadId);
+ await assert.rejects(s.act(u.SALES,'lead.profile',{id:leadId,version:updated.version,customerBillNumber:'1'.repeat(101)}));
+ await s.act(u.SALES,'lead.profile',{id:leadId,version:updated.version,customerBillNumber:'',applicationNumber:''});
+ project=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ assert.equal(project.data.customerBillNumber,'');assert.equal(project.data.tracking.applicationNumber,'');assert.deepEqual(project.data.tracking.steps,before.data.tracking.steps);
+});
