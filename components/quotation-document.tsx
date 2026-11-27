@@ -1,3 +1,4 @@
+import { brandName } from '@/lib/brand-name.mjs';
 import Image from 'next/image';
 import { COMPANY_NAME } from '@/lib/brand';
 import { rupeesInWords } from '@/lib/quotation.mjs';
@@ -9,7 +10,7 @@ const date = (value: string) => value ? new Date(value).toLocaleDateString('en-I
 
 export default function QuotationDocument({ quote, settings }: { quote: Row; settings: Row }) {
   const d = quote.data, snapshot = d.company || { name: settings.company, email: settings.contactEmail, phone: settings.contactPhone };
-  const c = { ...snapshot, name: snapshot.name === 'Solaris' ? COMPANY_NAME : snapshot.name };
+  const c = { ...snapshot, name: snapshot.name === 'Solaris' ? COMPANY_NAME : brandName(snapshot.name) };
   const customer = d.customerDetails || { name: d.customer };
   const lines: Row[] = d.items || [{ name: d.product?.name || 'Solar system', description: d.product?.description, warranty: d.product?.warranty, quantity: d.capacity, unit: 'kW', unitPrice: Math.round(d.unitPrice * 100), amount: Math.round(d.unitPrice * 100 * d.capacity), taxRate: d.taxRate, tax: d.tax, total: d.total }];
   const groups = new Map<string, Row>();
@@ -27,7 +28,7 @@ export default function QuotationDocument({ quote, settings }: { quote: Row; set
     <header className="quotation-letterhead"><Image className="quotation-company-logo" src="/brand/samerika-logo.svg" alt="Samerika Power Private Limited" width={1175} height={965} unoptimized/><div className="quotation-company-info"><span className="quotation-kicker">SOLAR ENERGY SOLUTIONS</span><h2>{c.name}</h2>{c.tagline && <p>{c.tagline}</p>}{c.address && <p className="preserve-lines">{c.address}</p>}<p>{[c.phone, c.email].filter(Boolean).join(' · ')}</p>{(c.gstin || c.state) && <p>{[c.gstin && `GSTIN: ${c.gstin}`, c.state].filter(Boolean).join(' · ')}</p>}</div><div className="quotation-title"><h3>QUOTATION</h3><span>{quote.status || 'Draft'}</span></div></header>
     <section className="quotation-parties"><div><h4>QUOTATION FOR</h4><strong>{customer.name || 'Select a customer'}</strong><p>{[customer.address, customer.city, customer.state, customer.pin].filter(Boolean).join(', ')}</p>{customer.mobile && <p>Contact: {customer.mobile}</p>}{customer.email && <p>{customer.email}</p>}</div><div><p><b>Quotation no.</b><span>{quote.id || 'Assigned on save'}</span></p><p><b>Date</b><span>{date(quote.created_at || new Date().toISOString())}</span></p><p><b>Valid until</b><span>{date(d.validUntil)}</span></p></div></section>
     {d.placeOfSupply && <p className="quotation-footnote">Place of supply (installation site): {d.placeOfSupply} ({d.placeOfSupplyCode}) · Supplier state: {d.supplierState}</p>}
-    <p className="quotation-footnote">{inclusive ? 'Tax Included: rates and installation charges include GST. GST is shown within the total.' : 'Tax Excluded: GST is added to rates and installation charges.'}</p>
+    <p className="quotation-footnote">{inclusive ? `Tax Included: rates${d.installation ? ' and installation charges' : ''} include GST. GST is shown within the total.` : `Tax Excluded: GST is added to rates${d.installation ? ' and installation charges' : ''}.`}</p>
     <div className="quotation-table-scroll"><table className="quotation-items"><thead><tr><th>#</th><th>Item / description</th><th>HSN / SAC</th><th>Qty</th><th>Unit</th><th>Rate {inclusive ? '(incl. GST)' : '(excl. GST)'} (₹)</th><th>GST (₹)</th><th>Amount (₹)</th></tr></thead><tbody>{lines.map((line, i) => <tr key={i}><td>{i + 1}</td><td><strong>{line.name}</strong>{line.description && <p className="preserve-lines">{line.description}</p>}{line.warranty && <p>Warranty: {line.warranty}</p>}</td><td>{line.hsn || '—'}</td><td>{line.quantity}</td><td>{line.unit}</td><td>{quoteMoney(line.unitPrice)}</td><td>{quoteMoney(line.tax)}<small>{line.taxRate}%</small></td><td>{quoteMoney(line.total)}</td></tr>)}</tbody></table></div>
     {!!d.discountAmount && <p className="quotation-footnote">Discount of ₹{quoteMoney(d.discountAmount)} {inclusive ? 'reduces the amount including GST and is allocated across items before extracting GST.' : 'is allocated across items before GST.'}</p>}
     {!d.items && <p className="quotation-footnote">Installation: ₹{quoteMoney((d.installation || 0) * 100)} · Discount: ₹{quoteMoney((d.discount || 0) * 100)}</p>}

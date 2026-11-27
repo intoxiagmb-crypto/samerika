@@ -845,3 +845,79 @@ test('simultaneous reconversions cannot create duplicate active projects',async(
  const snapshot=await s.snapshot(u.ADMIN);assert.equal(snapshot.projects.length,1);assert.equal(snapshot.deletedProjects.length,1);
  assert.equal((await s.all("SELECT * FROM audit WHERE action='project.create'")).length,2);
 });
+
+const deletionProduct={name:'Catalogue kit',brand:'Test',category:'Solar kit',capacity:3,price:150000,system:'On-grid',warranty:'25 years'};
+test('only an active company administrator can delete products',async()=>{
+ const {s,u}=await setup();const id=await s.act(u.ADMIN,'product.create',deletionProduct);
+ const product=await s.one('SELECT * FROM records WHERE id=?',id);
+ for(const user of Object.values(u).filter(user=>user.role!=='ADMIN')){
+  await assert.rejects(s.act(user,'product.delete',{id,version:product.version}),/permission/);
+ }
+ await assert.rejects(s.act({...u.ADMIN,status:'Suspended'},'product.delete',{id,version:product.version}),/permission/);
+ assert.equal((await s.one('SELECT * FROM records WHERE id=?',id)).status,'Active');
+ assert.equal((await s.all("SELECT * FROM audit WHERE entity_id=? AND action='product.delete'",id)).length,0);
+});
+
+test('product deletion hides the catalogue item for every role and preserves existing quotations',async()=>{
+ const {s,u}=await setup();const {projectId}=await createProject(s,u);
+ const id=await s.act(u.ADMIN,'product.create',deletionProduct);
+ const legacy=await s.act(u.ADMIN,'quote.create',{projectId,productId:id,validUntil:'2099-12-31'});
+ const itemized=await s.act(u.ADMIN,'quote.create',{projectId,items:[{productId:id,quantity:2}],validUntil:'2099-12-31'});
+ const before=await Promise.all([legacy,itemized].map(id=>s.one('SELECT * FROM records WHERE id=?',id)));
+ const product=await s.one('SELECT * FROM records WHERE id=?',id);
+ assert.equal(await s.act(u.ADMIN,'product.delete',{id,version:product.version}),id);
+ const deleted=await s.one('SELECT * FROM records WHERE id=?',id);
+ assert.equal(deleted.status,'Deleted');assert.ok(deleted.data.deletedAt);assert.equal(deleted.data.deletedBy,u.ADMIN.id);
+ assert.equal(deleted.version,product.version+1);
+ for(const user of Object.values(u))assert.equal((await s.snapshot(user)).records.some(record=>record.id===id),false,user.role);
+ assert.deepEqual(await Promise.all([legacy,itemized].map(id=>s.one('SELECT * FROM records WHERE id=?',id))),before);
+ await assert.rejects(s.act(u.ADMIN,'quote.create',{projectId,productId:id,validUntil:'2099-12-31'}),/available solar kit/);
+ await assert.rejects(s.act(u.ADMIN,'quote.create',{projectId,items:[{productId:id,quantity:1}],validUntil:'2099-12-31'}),/unavailable/);
+ await assert.rejects(s.act(u.ADMIN,'product.update',{...deletionProduct,id,version:deleted.version}),/Product not found/);
+ await assert.rejects(s.act(u.ADMIN,'record.update',{id,version:deleted.version,status:'Active'}),/Product not found/);
+ await assert.rejects(s.act(u.ADMIN,'product.delete',{id,version:deleted.version}),/Product not found/);
+ const audit=await s.all("SELECT * FROM audit WHERE entity_id=? AND action='product.delete'",id);
+ assert.equal(audit.length,1);assert.equal(audit[0].actor_id,u.ADMIN.id);
+});
+
+test('product deletion rejects missing or stale versions and supports archived products',async()=>{
+ const {s,u}=await setup();const id=await s.act(u.ADMIN,'product.create',deletionProduct);
+ const product=await s.one('SELECT * FROM records WHERE id=?',id);
+ await s.act(u.ADMIN,'record.update',{id,version:product.version,status:'Archived'});
+ for(const version of [undefined,product.version,String(product.version+1)]){
+  await assert.rejects(s.act(u.ADMIN,'product.delete',{id,version}),/Product changed/);
+ }
+ assert.equal((await s.all("SELECT * FROM audit WHERE entity_id=? AND action='product.delete'",id)).length,0);
+ const archived=await s.one('SELECT * FROM records WHERE id=?',id);
+ await s.act(u.ADMIN,'product.delete',{id,version:archived.version});
+ assert.equal((await s.one('SELECT * FROM records WHERE id=?',id)).status,'Deleted');
+});
+
+test('simultaneous product deletion records one successful deletion and one audit event',async()=>{
+ const {s,u}=await setup();const id=await s.act(u.ADMIN,'product.create',deletionProduct);
+ const product=await s.one('SELECT * FROM records WHERE id=?',id);
+ const results=await Promise.allSettled([1,2].map(()=>s.act(u.ADMIN,'product.delete',{id,version:product.version})));
+ assert.equal(results.filter(result=>result.status==='fulfilled').length,1);
+ assert.equal(results.filter(result=>result.status==='rejected').length,1);
+ assert.equal((await s.all("SELECT * FROM audit WHERE entity_id=? AND action='product.delete'",id)).length,1);
+ assert.equal((await s.one('SELECT * FROM records WHERE id=?',id)).version,product.version+1);
+});
+
+test('stored company spelling is corrected across the administrator profile and workspace without renaming customers',async()=>{
+ const {s,u}=await setup();
+ await s.run('UPDATE users SET name=? WHERE id=?','semrika',u.ADMIN.id);
+ await s.run('UPDATE users SET name=? WHERE id=?','Semrika',u.CUSTOMER.id);
+ await s.run("UPDATE settings SET data=json_set(data,'$.company',?) WHERE key='company'",'Semrika Power Private Limited');
+ const admin=await s.user({userId:u.ADMIN.id});
+ assert.equal(admin.name,'Samerika');
+ const snapshot=await s.snapshot(admin);
+ assert.equal(snapshot.user.name,'Samerika');
+ assert.equal(snapshot.users.find(user=>user.id===admin.id).name,'Samerika');
+ assert.equal(snapshot.users.find(user=>user.id===u.CUSTOMER.id).name,'Semrika');
+ assert.equal(snapshot.settings.company,'Samerika Power Private Limited');
+ assert.ok(snapshot.audit.filter(log=>log.actor_id===admin.id).every(log=>log.actor_name==='Samerika'));
+ await s.act(admin,'profile',{name:'semrika'});
+ assert.equal((await s.db.prepare('SELECT name FROM users WHERE id=?').bind(admin.id).first()).name,'Samerika');
+ await s.act(admin,'settings',{...snapshot.settings,company:'semrika Power Private Limited'});
+ assert.equal((await s.one("SELECT * FROM settings WHERE key='company'")).data.company,'Samerika Power Private Limited');
+});
