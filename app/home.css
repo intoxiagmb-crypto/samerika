@@ -173,5 +173,6 @@
 .sh-planner-photo figcaption>span{flex-basis:100%;font-size:10px;font-weight:400;color:#e3ebf7}
 .sh-planner-quote{margin:0 0 24px;max-width:100%}
 @media(max-width:700px){.sh-planner-photo{min-height:0;aspect-ratio:4/3}.sh-planner-photo>img{object-position:center 37%}.sh-planner-photo figcaption{bottom:18px;left:20px;right:20px;font-size:13px}.sh-planner-quote{margin:20px 0 0}.sh-planner-photo figcaption>span{font-size:9px}}
-.sh-header-cta{max-width:170px;white-space:normal;flex-shrink:0}
+.sh-header-cta{max-width:170px;white-space:normal;flex-shrink:0;background:#fff;color:#092d61;border:2px solid #ff8500;box-shadow:none}
+.sh-header-cta:hover{background:#fff;color:#092d61;border-color:#e87500;box-shadow:0 4px 14px #ff85001a}
 @media(max-width:700px){.sh-header .brand.brand-link{width:clamp(125px,38vw,162px)}.sh-header .sh-header-cta{width:clamp(112px,33vw,132px);padding:9px 10px;font-size:11px;line-height:1.35;min-height:44px}}
