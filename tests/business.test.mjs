@@ -792,3 +792,56 @@ test('Project Back migration relabels returned New leads without changing fresh 
  await apply();
  assert.equal((await s.one('SELECT * FROM leads WHERE id=?',leadId)).status,'Contacted');
 });
+
+for(const legacy of [false,true])test(`delete and convert works for 25 successive cycles with ${legacy?'the legacy':'the current'} project index`,async()=>{
+ const {s,u}=await setup();
+ if(legacy)await s.db.batch([s.stmt('DROP INDEX projects_lead_id_unique'),s.stmt('CREATE UNIQUE INDEX projects_lead_id_unique ON projects(lead_id)')]);
+ const {leadId}=await createProject(s,u);
+ const originalLead=await s.one('SELECT * FROM leads WHERE id=?',leadId);
+ const archived=[],documents=[];
+ for(let cycle=0;cycle<25;cycle++){
+  const snapshot=await s.snapshot(u.ADMIN),project=snapshot.projects.find(p=>p.lead_id===leadId);
+  assert.ok(project);assert.equal(leadInbox(snapshot.leads,snapshot.projects).some(l=>l.id===leadId),false);
+  const docId=await s.createRecord(u.ADMIN,'document',project.id,'Pending',{name:`cycle-${cycle}.pdf`,fileKey:`archive-${cycle}`});documents.push({id:docId,projectId:project.id});
+  await s.act(u.ADMIN,'project.delete',{id:project.id,version:project.version});archived.push(project.id);
+  const returned=await s.one('SELECT * FROM leads WHERE id=?',leadId);
+  assert.equal(returned.status,'Project Back');
+  const nextId=await s.act(u.SALES,'project.create',{leadId});
+  assert.ok(!archived.includes(nextId));
+  const next=await s.one('SELECT * FROM projects WHERE id=?',nextId);
+  assert.ok(next.data.phases.every(phase=>phase.status==='Pending'));
+ }
+ const final=await s.snapshot(u.ADMIN);
+ assert.equal(final.projects.filter(p=>p.lead_id===leadId).length,1);assert.equal(final.deletedProjects.length,25);
+ for(const doc of documents){const stored=await s.one('SELECT * FROM records WHERE id=?',doc.id);assert.equal(stored.project_id,doc.projectId);assert.ok(stored.data.fileKey);assert.equal(final.records.some(r=>r.id===doc.id),false);}
+ const customer=await s.one('SELECT * FROM leads WHERE id=?',leadId);
+ assert.equal(customer.assigned_to,originalLead.assigned_to);assert.equal(customer.partner_id,originalLead.partner_id);
+ assert.equal(customer.data.activities.filter(a=>a.status==='Project Back').length,25);
+ await assert.rejects(s.act(u.SALES,'project.create',{leadId}),/Delete the active project/);
+ assert.match((await s.one("SELECT sql FROM sqlite_master WHERE name='projects_lead_id_unique'")).sql,/WHERE/i);
+});
+
+test('quotation reconversion repairs the legacy index and keeps its project and quote atomic',async()=>{
+ const {s,u}=await setup();const {leadId,projectId}=await createProject(s,u);
+ await s.db.batch([s.stmt('DROP INDEX projects_lead_id_unique'),s.stmt('CREATE UNIQUE INDEX projects_lead_id_unique ON projects(lead_id)')]);
+ const project=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ await s.act(u.ADMIN,'project.delete',{id:projectId,version:project.version});
+ const productId=await s.act(u.ADMIN,'product.create',{name:'Reconversion kit',brand:'Test',category:'Solar kit',capacity:3,price:100,system:'On-grid',warranty:'Test'});
+ const id=await s.act(u.SALES,'quote.create',{customerId:leadId,items:[{productId,quantity:1}],validUntil:'2099-12-31'});
+ const quote=await s.one('SELECT * FROM records WHERE id=?',id),snapshot=await s.snapshot(u.ADMIN);
+ assert.notEqual(quote.project_id,projectId);assert.equal(snapshot.projects.length,1);
+ assert.equal(snapshot.projects[0].id,quote.project_id);assert.equal(snapshot.records.filter(r=>r.kind==='quote').length,1);
+ assert.equal((await s.all("SELECT * FROM audit WHERE entity_id=? AND action='quote.created'",id)).length,1);
+});
+
+test('simultaneous reconversions cannot create duplicate active projects',async()=>{
+ const {s,u}=await setup();const {leadId,projectId}=await createProject(s,u);
+ await s.db.batch([s.stmt('DROP INDEX projects_lead_id_unique'),s.stmt('CREATE UNIQUE INDEX projects_lead_id_unique ON projects(lead_id)')]);
+ const project=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ await s.act(u.ADMIN,'project.delete',{id:projectId,version:project.version});
+ const results=await Promise.allSettled([s.act(u.SALES,'project.create',{leadId}),s.act(u.SALES,'project.create',{leadId})]);
+ assert.equal(results.filter(r=>r.status==='fulfilled').length,1);
+ assert.equal(results.filter(r=>r.status==='rejected'&&r.reason.status===409).length,1);
+ const snapshot=await s.snapshot(u.ADMIN);assert.equal(snapshot.projects.length,1);assert.equal(snapshot.deletedProjects.length,1);
+ assert.equal((await s.all("SELECT * FROM audit WHERE action='project.create'")).length,2);
+});

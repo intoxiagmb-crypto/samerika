@@ -8,7 +8,7 @@ import { runInThisContext } from 'node:vm';
 import ts from 'typescript';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { PHASES, ROLES } from '../lib/policy.mjs';
+import { PHASES, ROLES, LEAD_STATUSES } from '../lib/policy.mjs';
 
 // Render the real TSX components in Node without a browser or an added test framework.
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -60,4 +60,19 @@ test('project timeline retains authorized editing while tracking is read-only', 
   assert.match(html, /<select aria-label="Site Survey status"/);
   assert.match(html, /Upload documentation/);
   assert.match(html, /Complete project/);
+});
+
+
+test('coloured lead status picker preserves the named form value and accessible label', () => {
+  const StatusSelect = component(resolve(root, 'components/lead-status-select.tsx')).default;
+  for (const status of LEAD_STATUSES) {
+    const html = renderToStaticMarkup(React.createElement('form', null, React.createElement(StatusSelect, {
+      label: 'Lead status', name: 'status', defaultValue: status, required: true,
+      options: LEAD_STATUSES.map(value => ({ value, label: value })),
+    })));
+    assert.match(html, /role="combobox"/);
+    assert.match(html, /aria-label="Lead status"/);
+    assert.match(html, /<input type="hidden" name="status"/);
+    assert.ok(html.includes(`name="status" value="${status}"`), `${status} must be submitted with the form`);
+  }
 });
