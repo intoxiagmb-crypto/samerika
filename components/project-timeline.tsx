@@ -1,7 +1,7 @@
 'use client';
 
 import { Fragment, useState } from 'react';
-import { Check, Upload } from 'lucide-react';
+import { Check, Clock3, LoaderCircle, AlertCircle, Upload } from 'lucide-react';
 import { trackingSteps } from '@/lib/application-tracking.mjs';
 
 // The portal snapshot contains versioned JSON records shared with the business service.
@@ -36,8 +36,12 @@ export default function ProjectTimeline({ project, records, requiredDocuments, r
     </select> : <span className="project-step-status">{displayStatus(status)}</span>;
   }
   function row(id: string, label: string, status: string, control: React.ReactNode, content?: React.ReactNode, hint?: string) {
-    return <li className={`project-step ${status === 'Completed' ? 'is-done' : ''}`} key={id}>
-      <span className="project-step-dot">{status === 'Completed' ? <Check size={15}/> : <span/>}</span>
+    const done = status === 'Completed' || status === 'Cash';
+    const processing = ['Processing', 'In Progress', 'Under Review'].includes(status);
+    const held = ['Hold / Rejected', 'Rejected', 'Correction Required', 'Failed'].includes(status);
+    const tone = done ? 'is-done' : held ? 'is-held' : processing ? 'is-processing' : 'is-pending';
+    return <li className={`project-step ${tone}`} key={id}>
+      <span className="project-step-dot" aria-hidden="true">{done ? <Check size={18} strokeWidth={3}/> : held ? <AlertCircle size={18}/> : processing ? <LoaderCircle size={18}/> : <Clock3 size={17}/>}</span>
       <div className="project-step-body"><div className="project-step-heading"><strong>{label}</strong>{control}</div>{hint && <small>{hint}</small>}{content}</div>
     </li>;
   }
