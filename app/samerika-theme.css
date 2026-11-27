@@ -98,3 +98,13 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .quotation-item-scroll{display:flex;align-items:center;justify-content:center;min-height:32px;background:#f1f6fd;color:#123b70}
 
 .product-tax-label{display:block;margin-top:6px;color:#526b88;font-size:12px;font-weight:600}
+
+/* File preview is a separate action from opening a document's record. */
+.document-preview-link{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-width:44px;min-height:44px;padding:9px 12px;border:1px solid #b9d0ec;border-radius:10px;background:#f0f6ff;color:#07559b;font-size:13px;font-weight:600;white-space:nowrap;flex-shrink:0}
+.document-preview-link:hover{background:#dcecff;border-color:#1769b5}
+.related-record-row{display:flex;align-items:center;gap:12px;border-bottom:1px solid #d4e1f1}
+.related-record-row>.related-record{flex:1;min-width:0;border-bottom:0}
+.related-record-row>.related-record>span:first-child{min-width:0;overflow-wrap:anywhere}
+.document-file-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.document-file-actions>a{overflow-wrap:anywhere}
+@media(max-width:600px){.related-record-row{gap:8px}.related-record-row .document-preview-link{padding:10px}.related-record-row .document-preview-link>span{display:none}}

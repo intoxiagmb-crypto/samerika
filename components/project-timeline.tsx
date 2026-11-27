@@ -1,5 +1,6 @@
 'use client';
 
+import DocumentPreviewLink from './document-preview-link';
 import ProjectHistory from './project-history';
 import { Fragment, useId, useState } from 'react';
 import { Check, Clock3, LoaderCircle, AlertCircle, Upload } from 'lucide-react';
@@ -63,8 +64,8 @@ export default function ProjectTimeline({ project, records, requiredDocuments, r
     selector('Documentation', documentation, reviewer, status => { void onUpdate?.('project.documentation', { ...extra, status, documents: requiredUploads.filter(Boolean).map((document: Row) => ({ id: document.id, version: document.version })) }, `Documentation: ${status}`); }),
     <details className="project-documentation-files"><summary>{readOnly ? 'View documents' : 'Upload / view documents'}</summary>
       {upload && live && <div className="project-documentation-upload"><select aria-label="Documentation document type" value={documentType} disabled={saving} onChange={event => setDocumentType(event.target.value)}>{requiredDocuments.map(name => <option key={name} value={name}>{name}</option>)}</select><label className="project-upload"><Upload size={14}/>Upload document<input aria-label="Upload documentation" type="file" accept="application/pdf,image/jpeg,image/png" disabled={saving} onChange={event => { const file = event.target.files?.[0]; event.target.value = ''; if (file) void onUpload?.(file, documentType); }}/></label></div>}
-      {requiredDocuments.map((name, index) => { const document = requiredUploads[index]; return <div className="project-documentation-file" key={name}><strong>{name}</strong>{document ? <>{role !== 'PARTNER' ? <a href={`/api/files?id=${encodeURIComponent(document.id)}`}>{document.data.name}</a> : <span>{document.data.name}</span>}<small>{document.status}</small></> : <small>Not uploaded</small>}</div>; })}
-      <small>PDF, JPEG or PNG · up to 4 MB per file</small>
+      {requiredDocuments.map((name, index) => { const document = requiredUploads[index]; return <div className="project-documentation-file" key={name}><strong>{name}</strong>{document ? <>{role !== 'PARTNER' ? <div className="document-file-actions"><a href={`/api/files?id=${encodeURIComponent(document.id)}`}>{document.data.name}</a><DocumentPreviewLink id={document.id} name={document.data.name}/></div> : <span>{document.data.name}</span>}<small>{document.status}</small></> : <small>Not uploaded</small>}</div>; })}
+      <small>PDF, JPEG or PNG · up to 2 MB per file</small>
     </details>, `${requiredUploads.filter(Boolean).length} of ${requiredDocuments.length} documents uploaded`);
   const approvalNames = Array.from(new Set([...(project.data.requiredApprovals || []), ...(project.data.finance === 'Cash' ? ['Bank approval'] : [])]));
   const approvals = approvalNames.map((name: string) => {

@@ -986,3 +986,17 @@ test('mixed catalogue tax settings survive sharing and later product changes; le
  assert.equal((await s.one('SELECT * FROM records WHERE id=?',legacy)).data.priceTaxMode,'exclusive');
  assert.equal((await s.one('SELECT * FROM records WHERE id=?',legacy)).amount,31500);
 });
+
+test('document and KYC uploads accept exactly 2 MB and reject oversized files without creating records',async()=>{
+ const {s,u}=await setup();const {projectId}=await createProject(s,u);
+ for(const input of [{user:u.CUSTOMER,projectId,documentType:'Electricity bill'},{user:u.PARTNER,projectId:'',documentType:'Partner KYC'}]){
+  const {user,...fields}=input;
+  const file={...fields,name:'limit.pdf',mime:'application/pdf',size:2*1024*1024,key:'test-limit'};
+  const id=await s.upload(user,file);
+  assert.equal((await s.one('SELECT * FROM records WHERE id=?',id)).data.size,2*1024*1024);
+  const before=(await s.all('SELECT id FROM records')).length;
+  await assert.rejects(s.upload(user,{...file,size:2*1024*1024+1}),error=>error.status===413&&/2 MB/.test(error.message));
+  await assert.rejects(s.upload(user,{...file,size:0}),/non-empty/);
+  assert.equal((await s.all('SELECT id FROM records')).length,before);
+ }
+});

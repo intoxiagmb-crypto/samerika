@@ -35,7 +35,7 @@ This project now uses **Next.js on Node 22**, **Turso libSQL** for persistent SQ
 
 The build works without production secrets. Live sign-in and database operations require a migrated Turso database; uploads require a private Blob store. Vercel never falls back to a temporary local database or local uploaded files. No remote resources, credentials, migrations or live deployment are created merely by building or pushing the source.
 
-Server uploads accept PDF, JPEG or PNG up to **4 MB**, leaving room for multipart overhead under Vercel's 4.5 MB function request limit. Files are read through an authenticated endpoint after project/owner permission checks. Blob objects are private; MIME signatures are checked before upload. The UI shows the same size limit.
+Server uploads accept PDF, JPEG or PNG up to **2 MB**, leaving room for multipart overhead under Vercel's 4.5 MB function request limit. Files are read through an authenticated endpoint after project/owner permission checks. Blob objects are private; MIME signatures are checked before upload. The UI shows the same size limit.
 
 Existing Cloudflare D1/R2 data is not automatically copied. This migration preserves the SQL schema and role/business rules, but an existing populated database or bucket requires a separate controlled data transfer. Do not point the initial schema migrations at an imported populated database without baselining its migration history. The previous `.openai/hosting.json` identity and legacy build helpers remain archived in the repository; Vercel does not use them or ChatGPT authentication headers.
 
