@@ -66,7 +66,7 @@ export default function ProjectTimeline({ project, records, requiredDocuments, r
       cash ? <small>Cash payment · bank approval is not required.</small> : manage && live ? input(`approval-${name}`, `${name} reference (required to complete)`, approval?.data.reference || '') : approval?.data.reference && <small>{approval.data.reference}</small>);
   });
   const phases = project.data.phases.map((phase: Row, index: number) => {
-    const name = phase.name === 'Meter & grid connection' ? 'Net Metering' : phase.name;
+    const name = phase.name === 'Meter & grid connection' ? 'Net Metering' : phase.name === 'Testing & commissioning' ? 'DCR' : phase.name;
     const unlocked = project.data.phases.slice(0, index).every((item: Row) => item.status === 'Completed');
     const editable = index >= 6 ? manage : technical;
     return row(`phase-${index}`, name, phase.status,
