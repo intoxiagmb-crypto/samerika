@@ -68,7 +68,7 @@ export default function ProjectTimeline({ project, records, requiredDocuments, r
   const phases = project.data.phases.map((phase: Row, index: number) => {
     if (phase.name === 'Quality inspection') return null;
     const handover = phase.name === 'Customer handover';
-    const name = phase.name === 'Meter & grid connection' ? 'Net Metering' : phase.name === 'Testing & commissioning' ? 'DCR' : phase.name;
+    const name = phase.name === 'Meter & grid connection' ? 'Net Metering' : ['Testing & commissioning', 'DCR'].includes(phase.name) ? 'DCR Registration' : phase.name;
     const unlocked = project.data.phases.slice(0, index).filter((item: Row) => item.name !== 'Quality inspection').every((item: Row) => item.status === 'Completed');
     const editable = handover ? manage : technical;
     return row(`phase-${index}`, name, phase.status,
