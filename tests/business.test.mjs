@@ -607,3 +607,31 @@ test('public quotation links stop working while a project is deleted',async()=>{
  await s.act(u.ADMIN,'project.restore',{id:projectId,version:p.version+1});
  assert.ok(await getSharedQuotation(db,token));
 });
+
+test('quotation tax pricing choice is validated, calculated on the server and preserved when shared',async()=>{
+ const {createQuotationShare,getSharedQuotation}=await import('../lib/quotation-sharing.mjs');
+ const {db,s,u}=await setup();const {projectId}=await createProject(s,u);
+ const productId=await s.act(u.ADMIN,'product.create',{name:'Tax option kit',brand:'Test',category:'Solar kit',capacity:1,price:118,system:'On-grid',warranty:'Test',taxRate:18});
+ const input={projectId,items:[{productId,quantity:2,unitPrice:1,taxRate:0}],validUntil:'2099-12-31'};
+ await assert.rejects(s.act(u.SALES,'quote.create',{...input,priceTaxMode:'invalid'}),/Invalid enum/);
+ const inclusiveId=await s.act(u.SALES,'quote.create',{...input,priceTaxMode:'inclusive'});
+ const inclusive=await s.one('SELECT * FROM records WHERE id=?',inclusiveId);
+ assert.equal(inclusive.amount,23600);assert.equal(inclusive.data.subtotal,20000);assert.equal(inclusive.data.tax,3600);
+ assert.equal(inclusive.data.priceTaxMode,'inclusive');assert.equal(inclusive.data.items[0].unitPrice,11800);
+ const exclusiveId=await s.act(u.SALES,'quote.create',input);
+ const exclusive=await s.one('SELECT * FROM records WHERE id=?',exclusiveId);
+ assert.equal(exclusive.data.priceTaxMode,'exclusive');assert.equal(exclusive.amount,27848);
+ await s.act(u.ADMIN,'record.update',{id:inclusiveId,status:'Approved'});
+ await s.act(u.ADMIN,'record.update',{id:inclusiveId,status:'Sent'});
+ const share=await createQuotationShare(db,u.ADMIN,inclusiveId);
+ const shared=await getSharedQuotation(db,share.path.split('/').pop());
+ assert.equal(shared.data.priceTaxMode,'inclusive');assert.equal(shared.data.total,23600);assert.equal(shared.data.tax,3600);
+ const savedData=(await s.one('SELECT * FROM records WHERE id=?',inclusiveId)).data;
+ const product=await s.one('SELECT * FROM records WHERE id=?',productId);
+ await s.act(u.ADMIN,'product.update',{...product.data,id:productId,version:product.version,price:999,taxRate:5});
+ assert.deepEqual((await s.one('SELECT * FROM records WHERE id=?',inclusiveId)).data,savedData);
+ const legacyId=await s.act(u.SALES,'quote.create',{projectId,productId,priceTaxMode:'inclusive',validUntil:'2099-12-31'});
+ const legacy=await s.one('SELECT * FROM records WHERE id=?',legacyId);
+ assert.equal(legacy.data.priceTaxMode,'inclusive');assert.equal(legacy.amount,299700);
+ assert.equal(legacy.data.subtotal+legacy.data.tax,legacy.amount);
+});
