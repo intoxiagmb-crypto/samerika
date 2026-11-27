@@ -545,3 +545,65 @@ test('retired application installation status cannot block edits to the shared i
  const snapshot=await s.snapshot(u.ADMIN);
  assert.equal(snapshot.projects.find(project=>project.id===projectId).progress.text,'Site preparation · Processing');
 });
+
+
+test('admin can delete and restore a project without losing its lead, timeline or documents',async()=>{
+ const {s,u}=await setup();const {projectId,leadId}=await createProject(s,u);
+ const docId=await s.upload(u.CUSTOMER,{projectId,documentType:'Electricity bill',name:'bill.pdf',mime:'application/pdf',size:10,key:'retained-document'});
+ const before=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ const documentBefore=await s.one('SELECT * FROM records WHERE id=?',docId);
+ await s.act(u.ADMIN,'project.delete',{id:projectId,version:before.version});
+ for(const user of Object.values(u)){
+  const snapshot=await s.snapshot(user);
+  assert.equal(snapshot.projects.some(p=>p.id===projectId),false);
+  assert.equal(snapshot.records.some(r=>r.project_id===projectId),false);
+  assert.equal(snapshot.deletedProjects.length,user.role==='ADMIN'?1:0);
+  await assert.rejects(s.access(user,projectId),/Project not found/);
+ }
+ const deleted=(await s.snapshot(u.ADMIN)).deletedProjects[0];
+ assert.equal(deleted.data.deletedBy,u.ADMIN.id);
+ assert.ok(deleted.data.deletedAt);
+ assert.equal((await s.one('SELECT * FROM leads WHERE id=?',leadId)).status,'Converted');
+ assert.deepEqual(await s.one('SELECT * FROM records WHERE id=?',docId),documentBefore);
+ await assert.rejects(s.fileAccess(u.CUSTOMER,docId),/Project not found/);
+ await assert.rejects(s.act(u.ADMIN,'project.update',{id:projectId,status:'Installation'}),/Project not found/);
+ await assert.rejects(s.act(u.ADMIN,'quote.create',{customerId:leadId}),/Restore this project/);
+ await s.act(u.ADMIN,'project.restore',{id:projectId,version:deleted.version});
+ const restored=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ const {deletionChangeId,...restoredData}=restored.data;
+ assert.ok(deletionChangeId);assert.deepEqual(restoredData,before.data);
+ assert.equal(restored.status,before.status);
+ assert.equal((await s.snapshot(u.ADMIN)).deletedProjects.length,0);
+ assert.equal((await s.snapshot(u.CUSTOMER)).projects[0].id,projectId);
+ assert.equal((await s.fileAccess(u.CUSTOMER,docId)).data.fileKey,'retained-document');
+ const audit=await s.all("SELECT * FROM audit WHERE entity_id=? AND action IN ('project.delete','project.restore')",projectId);
+ assert.deepEqual(audit.map(a=>a.action).sort(),['project.delete','project.restore']);
+});
+
+test('project deletion and restoration require admin and the current version',async()=>{
+ const {s,u}=await setup();const {projectId}=await createProject(s,u);
+ const p=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ for(const user of Object.values(u).filter(user=>user.role!=='ADMIN')){
+  for(const action of ['project.delete','project.restore'])await assert.rejects(s.act(user,action,{id:projectId,version:p.version}),/permission/);
+ }
+ for(const version of [undefined,p.version-1])await assert.rejects(s.act(u.ADMIN,'project.delete',{id:projectId,version}),/Project changed/);
+ await assert.rejects(s.act(u.ADMIN,'project.restore',{id:projectId,version:p.version}),/not deleted/);
+ await s.act(u.ADMIN,'project.delete',{id:projectId,version:p.version});
+ await assert.rejects(s.act(u.ADMIN,'project.restore',{id:projectId,version:p.version}),/Project changed/);
+ await assert.rejects(s.act(u.ADMIN,'project.delete',{id:projectId,version:p.version+1}),/already deleted/);
+ assert.equal((await s.all("SELECT * FROM audit WHERE entity_id=? AND action IN ('project.delete','project.restore')",projectId)).length,1);
+});
+
+test('public quotation links stop working while a project is deleted',async()=>{
+ const {createQuotationShare,getSharedQuotation}=await import('../lib/quotation-sharing.mjs');
+ const {db,s,u}=await setup();const {projectId}=await createProject(s,u);
+ const quoteId=await s.createRecord(u.ADMIN,'quote',projectId,'Sent',{customerDetails:{mobile:'9876543210'},validUntil:'2099-12-31'});
+ const share=await createQuotationShare(db,u.ADMIN,quoteId);const token=share.path.split('/').pop();
+ assert.ok(await getSharedQuotation(db,token));
+ const p=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ await s.act(u.ADMIN,'project.delete',{id:projectId,version:p.version});
+ assert.equal(await getSharedQuotation(db,token),null);
+ await assert.rejects(createQuotationShare(db,u.ADMIN,quoteId),/Project not found/);
+ await s.act(u.ADMIN,'project.restore',{id:projectId,version:p.version+1});
+ assert.ok(await getSharedQuotation(db,token));
+});

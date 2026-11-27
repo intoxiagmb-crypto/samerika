@@ -7,3 +7,8 @@
 .project-current-status{display:inline-flex;align-items:center;gap:7px;max-width:100%;padding:7px 10px;border:1px solid #a67c00;border-radius:9px;background:#fff7db;color:#765400;font-size:11px;font-weight:500;line-height:1.5;white-space:normal;text-align:left}.project-current-status>span{flex:0 0 6px;width:6px;height:6px;border-radius:50%;background:currentColor}.project-current-status.is-done{background:#eaf5ec;color:#14532d;border-color:#166534}.project-current-status.is-held{background:#fff1f2;color:#991b1b;border-color:#b91c1c}.progress-project>.project-current-status{margin-top:7px;font-size:10px;justify-content:center}
 
 .project-update-history{margin:22px 0;font-size:12px;color:#526888}.project-update-history summary{cursor:pointer;padding:10px 0;line-height:1.5}.project-update-history>details{border-top:1px solid #d3deed;padding-left:12px}.project-update-history ol{margin:0;padding:0;list-style:none}.project-update-history li{display:grid;gap:6px;padding:12px 0;border-top:1px solid #edf1f6;overflow-wrap:anywhere}.project-update-history li span{font-size:11px}.project-update-history li p{margin:0;white-space:pre-wrap}
+
+.project-row-actions{display:flex;align-items:center;gap:14px;white-space:nowrap}
+.project-row-actions .project-delete{color:#b42318}
+.button.button-danger{background:#b42318;color:#fff;border-color:#b42318}
+.button.button-danger:hover{background:#912018}
