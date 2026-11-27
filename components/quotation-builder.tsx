@@ -3,7 +3,7 @@ import { useState } from 'react';
 import QuotationItemSelect from './quotation-item-select';
 import { Plus, Trash2, X, FileText, LoaderCircle } from 'lucide-react';
 import { quotationTaxLocation, quotationTaxLabel, quotationTerms } from '@/lib/quotation-policy.mjs';
-import { itemQuoteTotal } from '@/lib/quotation.mjs';
+import { itemQuoteTotal, priceTaxLabel } from '@/lib/quotation.mjs';
 import QuotationDocument, { quoteMoney } from './quotation-document';
 // The business API exposes heterogeneous JSON records, including historical quotations.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -13,8 +13,6 @@ export default function QuotationBuilder({ data, projectId, saving, error, onClo
   const project = data.projects.find((p: Row) => p.id === projectId);
   const [customerId, setCustomerId] = useState(project?.lead_id || '');
   const [items, setItems] = useState<Selection[]>([{ key: 1, productId: '', quantity: '1' }]);
-  const [priceTaxMode, setPriceTaxMode] = useState<'exclusive' | 'inclusive'>('exclusive');
-  const inclusive = priceTaxMode === 'inclusive';
   const [validUntil, setValidUntil] = useState(() => new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10));
   const terms = quotationTerms(data.settings);
   let taxLocation: Row | null = null, taxError = '';
@@ -28,23 +26,22 @@ export default function QuotationBuilder({ data, projectId, saving, error, onClo
     totals = itemQuoteTotal(items.map(item => {
       const product = products.find((p: Row) => p.id === item.productId);
       if (!product) throw new Error('Select a product for every item.');
-      return { productId: product.id, name: product.data.name, description: product.data.description, warranty: product.data.warranty, hsn: product.data.hsn || '', unit: product.data.unit || 'Pcs', quantity: Number(item.quantity), unitPrice: product.amount, taxRate: product.data.taxRate ?? data.settings.taxRate };
-    }), { priceTaxMode, taxRate: data.settings.taxRate });
+      return { productId: product.id, name: product.data.name, description: product.data.description, warranty: product.data.warranty, hsn: product.data.hsn || '', unit: product.data.unit || 'Pcs', quantity: Number(item.quantity), unitPrice: product.amount, priceTaxMode: product.data.priceTaxMode ?? 'exclusive', taxRate: product.data.taxRate ?? data.settings.taxRate };
+    }), { taxRate: data.settings.taxRate });
   } catch (e) { validation = (e as Error).message; }
   return <div className="modal-backdrop quotation-builder-backdrop" onClick={() => !saving && onClose()}><section className="quotation-builder" role="dialog" aria-modal="true" aria-labelledby="quotation-builder-title" onClick={e => e.stopPropagation()}>
     <header className="quotation-builder-heading"><div><span className="eyebrow">CUSTOMER → ITEMS → QUOTATION</span><h2 id="quotation-builder-title">Create quotation</h2><p>Select a customer and catalogue items. Rates, GST and totals fill in automatically.</p></div><button className="icon-button" aria-label="Close quotation" disabled={saving} onClick={onClose}><X size={20}/></button></header>
-    <form onSubmit={e => { e.preventDefault(); if (customer && totals && taxLocation) onSave({ customerId, priceTaxMode, ...(projectId ? { projectId } : {}), items: items.map(({ productId, quantity }) => ({ productId, quantity: Number(quantity) })), validUntil }); }}>
+    <form onSubmit={e => { e.preventDefault(); if (customer && totals && taxLocation) onSave({ customerId, ...(projectId ? { projectId } : {}), items: items.map(({ productId, quantity }) => ({ productId, quantity: Number(quantity) })), validUntil }); }}>
       <fieldset disabled={saving} className="quotation-fields"><div className="quotation-input-grid"><label className="form-field"><span>Customer name *</span><select autoFocus required value={customerId} disabled={!!projectId} onChange={e => setCustomerId(e.target.value)}><option value="">Select customer</option>{customers.map((l: Row) => <option key={l.id} value={l.id}>{l.name} · {l.mobile} · {l.data.city}</option>)}</select></label><label className="form-field"><span>Valid until *</span><input type="date" required min={new Date().toISOString().slice(0, 10)} value={validUntil} onChange={e => setValidUntil(e.target.value)}/></label></div>
       {!customers.length && <p className="alert">Add a customer in Leads & customers before creating a quotation.</p>}
       {customer?.data.qualificationRequired && <p className="alert">Confirm site details for this website enquiry in Leads &amp; customers before creating a quotation.</p>}
       {customer && <div className="quotation-customer-card"><b>{customer.name}</b><span>{customer.mobile} · {customer.customer_email}</span><span>{[customer.data.address, customer.data.city, customer.data.state, customer.data.pin].filter(Boolean).join(', ')}</span>{!data.projects.some((p: Row) => p.lead_id === customer.id) && <small>A linked project will be created when you save this quotation.</small>}</div>}
-      <label className="form-field"><span>Tax on product amount</span><select value={priceTaxMode} onChange={e => setPriceTaxMode(e.target.value as 'exclusive' | 'inclusive')}><option value="exclusive">Tax Excluded · Add GST to amount</option><option value="inclusive">Tax Included · GST is within amount</option></select><small>{inclusive ? 'Product rates include GST.' : 'GST is added to the product rates.'}</small></label>
-      <div className="quotation-section-heading"><h3>Items</h3><span>Rates are per catalogue unit, {inclusive ? 'including' : 'excluding'} GST.</span></div>
+      <div className="quotation-section-heading"><h3>Items</h3><span>Prices and Tax Included / Tax Excluded settings come from each product.</span></div>
       {!products.length && <p className="alert">Add products in Products & kits first. Include their selling price, unit and GST rate.</p>}
-      <div className="quotation-editor-scroll"><table className="quotation-editor-table"><thead><tr><th>Product / service *</th><th>Quantity *</th><th>Unit</th><th>Rate {inclusive ? '(incl. GST)' : '(excl. GST)'} (₹)</th><th>GST</th><th>Amount (₹)</th><th/></tr></thead><tbody>{items.map((item, i) => {
+      <div className="quotation-editor-scroll"><table className="quotation-editor-table"><thead><tr><th>Product / service *</th><th>Quantity *</th><th>Unit</th><th>Rate (₹)</th><th>GST</th><th>Amount (₹)</th><th/></tr></thead><tbody>{items.map((item, i) => {
         const product = products.find((p: Row) => p.id === item.productId);
         const line = totals?.items[i];
-        return <tr key={item.key}><td><QuotationItemSelect label={`Item ${i + 1}`} value={item.productId} disabled={saving || !products.length} onChange={productId => update(item.key, { productId })} items={products.map((p: Row) => ({ id: p.id, name: p.data.name, price: quoteMoney(p.amount), disabled: items.some(other => other.key !== item.key && other.productId === p.id) }))}/>{product && <small>{product.data.brand}{product.data.hsn ? ` · HSN: ${product.data.hsn}` : ''}</small>}</td><td><input aria-label={`Quantity ${i + 1}`} type="number" min="0.001" max="10000" step="0.001" required value={item.quantity} onChange={e => update(item.key, { quantity: e.target.value })}/></td><td>{product?.data.unit || 'Pcs'}</td><td>{product ? quoteMoney(product.amount) : '—'}</td><td>{product ? `${product.data.taxRate ?? data.settings.taxRate}%` : '—'}</td><td>{line ? quoteMoney(line.total) : '—'}</td><td><button type="button" className="icon-button" disabled={items.length === 1} aria-label={`Remove item ${i + 1}`} onClick={() => setItems(items.filter(x => x.key !== item.key))}><Trash2 size={16}/></button></td></tr>;
+        return <tr key={item.key}><td><QuotationItemSelect label={`Item ${i + 1}`} value={item.productId} disabled={saving || !products.length} onChange={productId => update(item.key, { productId })} items={products.map((p: Row) => ({ id: p.id, name: p.data.name, price: quoteMoney(p.amount), taxLabel: priceTaxLabel(p.data.priceTaxMode), disabled: items.some(other => other.key !== item.key && other.productId === p.id) }))}/>{product && <small>{product.data.brand}{product.data.hsn ? ` · HSN: ${product.data.hsn}` : ''}</small>}</td><td><input aria-label={`Quantity ${i + 1}`} type="number" min="0.001" max="10000" step="0.001" required value={item.quantity} onChange={e => update(item.key, { quantity: e.target.value })}/></td><td>{product?.data.unit || 'Pcs'}</td><td>{product ? <>{quoteMoney(product.amount)}<small>{priceTaxLabel(product.data.priceTaxMode)}</small></> : '—'}</td><td>{product ? `${product.data.taxRate ?? data.settings.taxRate}%` : '—'}</td><td>{line ? quoteMoney(line.total) : '—'}</td><td><button type="button" className="icon-button" disabled={items.length === 1} aria-label={`Remove item ${i + 1}`} onClick={() => setItems(items.filter(x => x.key !== item.key))}><Trash2 size={16}/></button></td></tr>;
       })}</tbody></table></div>
       <button type="button" className="button button-secondary" disabled={items.length >= 100 || !products.length} onClick={() => setItems([...items, { key: Math.max(...items.map(x => x.key)) + 1, productId: '', quantity: '1' }])}><Plus size={16}/> Add item</button>
       <div className="form-field quotation-gst-presentation"><span>GST presentation</span><output className="quotation-readonly">{taxLocation ? quotationTaxLabel(taxLocation.taxMode) : 'Select a customer with a valid state'}</output></div>

@@ -96,3 +96,5 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .quotation-item-option[data-disabled]{opacity:.45;cursor:not-allowed}
 .quotation-item-check{position:absolute;right:16px;top:50%;transform:translateY(-50%);color:#07559b}
 .quotation-item-scroll{display:flex;align-items:center;justify-content:center;min-height:32px;background:#f1f6fd;color:#123b70}
+
+.product-tax-label{display:block;margin-top:6px;color:#526b88;font-size:12px;font-weight:600}

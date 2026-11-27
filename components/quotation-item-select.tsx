@@ -3,7 +3,7 @@
 import { Select } from 'radix-ui';
 import { Check, ChevronDown, ChevronUp } from 'lucide-react';
 
-type Item = { id: string; name: string; price: string; disabled: boolean };
+type Item = { id: string; name: string; price: string; taxLabel?: string; disabled: boolean };
 type Props = {
   label: string;
   value: string;
@@ -17,7 +17,7 @@ export default function QuotationItemSelect({ label, value, items, disabled, onC
   return <Select.Root value={value} onValueChange={onChange} required disabled={disabled}>
     <Select.Trigger className="quotation-item-trigger" aria-label={label}>
       <Select.Value placeholder="Select item">
-        {selected && <span className="quotation-item-copy"><span className="quotation-item-name">{selected.name}</span><span className="quotation-item-price">₹{selected.price}</span></span>}
+        {selected && <span className="quotation-item-copy"><span className="quotation-item-name">{selected.name}</span><span className="quotation-item-price">₹{selected.price}{selected.taxLabel && ` · ${selected.taxLabel}`}</span></span>}
       </Select.Value>
       <Select.Icon><ChevronDown size={20}/></Select.Icon>
     </Select.Trigger>
@@ -26,7 +26,7 @@ export default function QuotationItemSelect({ label, value, items, disabled, onC
         <Select.ScrollUpButton className="quotation-item-scroll"><ChevronUp size={20}/></Select.ScrollUpButton>
         <Select.Viewport className="quotation-item-options">
           {items.map(item => <Select.Item className="quotation-item-option" key={item.id} value={item.id} disabled={item.disabled} textValue={item.name}>
-            <Select.ItemText><span className="quotation-item-copy"><span className="quotation-item-name">{item.name}</span><span className="quotation-item-price">₹{item.price}{item.disabled ? ' · Already added' : ''}</span></span></Select.ItemText>
+            <Select.ItemText><span className="quotation-item-copy"><span className="quotation-item-name">{item.name}</span><span className="quotation-item-price">₹{item.price}{item.taxLabel && ` · ${item.taxLabel}`}{item.disabled ? ' · Already added' : ''}</span></span></Select.ItemText>
             <Select.ItemIndicator className="quotation-item-check"><Check size={20}/></Select.ItemIndicator>
           </Select.Item>)}
         </Select.Viewport>

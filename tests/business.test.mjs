@@ -609,24 +609,26 @@ test('public quotation links stop working while a project is deleted',async()=>{
  assert.ok(await getSharedQuotation(db,token));
 });
 
-test('quotation tax pricing choice is validated, calculated on the server and preserved when shared',async()=>{
+test('product tax pricing is validated, enforced by quotations and preserved when shared',async()=>{
  const {createQuotationShare,getSharedQuotation}=await import('../lib/quotation-sharing.mjs');
  const {db,s,u}=await setup();const {projectId}=await createProject(s,u);
- const productId=await s.act(u.ADMIN,'product.create',{name:'Tax option kit',brand:'Test',category:'Solar kit',capacity:1,price:118,system:'On-grid',warranty:'Test',taxRate:18});
+ const productInput={name:'Tax option kit',brand:'Test',category:'Solar kit',capacity:1,price:118,system:'On-grid',warranty:'Test',taxRate:18,priceTaxMode:'inclusive'};
+ await assert.rejects(s.act(u.ADMIN,'product.create',{...productInput,priceTaxMode:'invalid'}),/Invalid enum/);
+ const productId=await s.act(u.ADMIN,'product.create',productInput);
  const input={projectId,items:[{productId,quantity:2,unitPrice:1,taxRate:0}],validUntil:'2099-12-31'};
- await assert.rejects(s.act(u.SALES,'quote.create',{...input,priceTaxMode:'invalid'}),/Invalid enum/);
- const inclusiveId=await s.act(u.SALES,'quote.create',{...input,priceTaxMode:'inclusive'});
+ const inclusiveId=await s.act(u.SALES,'quote.create',{...input,priceTaxMode:'exclusive',items:[{productId,quantity:2,priceTaxMode:'exclusive',unitPrice:1,taxRate:0}]});
  const inclusive=await s.one('SELECT * FROM records WHERE id=?',inclusiveId);
  assert.equal(inclusive.amount,23600);assert.equal(inclusive.data.subtotal,20000);assert.equal(inclusive.data.tax,3600);
  assert.equal(inclusive.data.priceTaxMode,'inclusive');assert.equal(inclusive.data.items[0].unitPrice,11800);
- const exclusiveId=await s.act(u.SALES,'quote.create',input);
+ const exclusiveProduct=await s.act(u.ADMIN,'product.create',{...productInput,priceTaxMode:'exclusive'});
+ const exclusiveId=await s.act(u.SALES,'quote.create',{...input,priceTaxMode:'inclusive',items:[{productId:exclusiveProduct,quantity:2}]});
  const exclusive=await s.one('SELECT * FROM records WHERE id=?',exclusiveId);
  assert.equal(exclusive.data.priceTaxMode,'exclusive');assert.equal(exclusive.amount,27848);
  await s.act(u.ADMIN,'record.update',{id:inclusiveId,status:'Approved'});
  await s.act(u.ADMIN,'record.update',{id:inclusiveId,status:'Sent'});
  const share=await createQuotationShare(db,u.ADMIN,inclusiveId);
  const shared=await getSharedQuotation(db,share.path.split('/').pop());
- assert.equal(shared.data.priceTaxMode,'inclusive');assert.equal(shared.data.total,23600);assert.equal(shared.data.tax,3600);
+ assert.equal(shared.data.priceTaxMode,'inclusive');assert.equal(shared.data.items[0].priceTaxMode,'inclusive');assert.equal(shared.data.total,23600);assert.equal(shared.data.tax,3600);
  const savedData=(await s.one('SELECT * FROM records WHERE id=?',inclusiveId)).data;
  const product=await s.one('SELECT * FROM records WHERE id=?',productId);
  await s.act(u.ADMIN,'product.update',{...product.data,id:productId,version:product.version,price:999,taxRate:5});
@@ -920,4 +922,67 @@ test('stored company spelling is corrected across the administrator profile and 
  assert.equal((await s.db.prepare('SELECT name FROM users WHERE id=?').bind(admin.id).first()).name,'Samerika');
  await s.act(admin,'settings',{...snapshot.settings,company:'semrika Power Private Limited'});
  assert.equal((await s.one("SELECT * FROM settings WHERE key='company'")).data.company,'Samerika Power Private Limited');
+});
+
+test('manual customer requirements accept omitted, empty and whitespace email with distinct mobile numbers',async()=>{
+ const {s,u}=await setup();
+ const roles=['ADMIN','SALES','MANAGER','PARTNER'];
+ for(let index=0;index<roles.length;index++){
+  const role=roles[index],mobile=`987654340${index}`;
+  const id=await s.act(u[role],'lead.create',{...lead,mobile,email:[undefined,'','   ',''][index]});
+  const saved=await s.one('SELECT * FROM leads WHERE id=?',id);
+  assert.equal(saved.customer_email,'');assert.equal(saved.data.email,'');assert.equal(saved.mobile,mobile);
+  assert.ok((await s.snapshot(u[role])).leads.some(item=>item.id===id));
+  assert.equal((await s.snapshot(u.CUSTOMER)).leads.some(item=>item.id===id),false);
+ }
+ await assert.rejects(s.act(u.ADMIN,'lead.create',{...lead,mobile:'9876543400',email:''}),/already exists/);
+});
+
+test('optional lead email still validates supplied addresses and prevents duplicate nonempty emails',async()=>{
+ const {s,u}=await setup();
+ await assert.rejects(s.act(u.ADMIN,'lead.create',{...lead,email:'not-an-email'}),/email/i);
+ const id=await s.act(u.ADMIN,'lead.create',{...lead,email:' CUSTOMER@EXAMPLE.TEST '});
+ assert.equal((await s.one('SELECT * FROM leads WHERE id=?',id)).customer_email,'customer@example.test');
+ await assert.rejects(s.act(u.ADMIN,'lead.create',{...lead,mobile:'9876543411'}),/already exists/);
+});
+
+test('customers can omit enquiry email while retaining signed-in ownership and cannot impersonate another email',async()=>{
+ const {s,u}=await setup();
+ const id=await s.act(u.CUSTOMER,'lead.create',{...lead,email:''});
+ assert.equal((await s.one('SELECT * FROM leads WHERE id=?',id)).customer_email,u.CUSTOMER.email);
+ assert.ok((await s.snapshot(u.CUSTOMER)).leads.some(item=>item.id===id));
+ const projectId=await s.act(u.ADMIN,'project.create',{leadId:id});
+ assert.equal((await s.access(u.CUSTOMER,projectId)).lead.id,id);
+ await assert.rejects(s.act(u.CUSTOMER,'lead.create',{...lead,mobile:'9876543412',email:'other@example.test'}),/signed-in email/);
+});
+
+test('mixed catalogue tax settings survive sharing and later product changes; legacy products default to excluded',async()=>{
+ const {createQuotationShare,getSharedQuotation}=await import('../lib/quotation-sharing.mjs');
+ const {db,s,u}=await setup();const {projectId}=await createProject(s,u);
+ const inclusiveId=await s.act(u.ADMIN,'product.create',{...deletionProduct,price:118,taxRate:18,priceTaxMode:'inclusive'});
+ const exclusiveId=await s.act(u.ADMIN,'product.create',{...deletionProduct,capacity:1,price:100,taxRate:5});
+ await s.run("UPDATE records SET data=json_remove(data,'$.priceTaxMode') WHERE id=?",exclusiveId);
+ const id=await s.act(u.SALES,'quote.create',{projectId,items:[{productId:inclusiveId,quantity:1},{productId:exclusiveId,quantity:1}],priceTaxMode:'inclusive',validUntil:'2099-12-31'});
+ const quote=await s.one('SELECT * FROM records WHERE id=?',id);
+ assert.equal(quote.data.priceTaxMode,'mixed');assert.equal(quote.amount,22300);
+ assert.equal(quote.data.subtotal,20000);assert.equal(quote.data.tax,2300);
+ assert.deepEqual(quote.data.items.map(item=>item.priceTaxMode),['inclusive','exclusive']);
+ await s.act(u.ADMIN,'record.update',{id,status:'Approved'});await s.act(u.ADMIN,'record.update',{id,status:'Sent'});
+ const share=await createQuotationShare(db,u.ADMIN,id);
+ const shared=await getSharedQuotation(db,share.path.split('/').pop());
+ assert.deepEqual(shared.data.items.map(item=>item.priceTaxMode),['inclusive','exclusive']);
+ assert.equal(shared.data.priceTaxMode,'mixed');assert.equal(shared.data.total,22300);
+ const savedData=(await s.one('SELECT * FROM records WHERE id=?',id)).data;
+ const product=await s.one('SELECT * FROM records WHERE id=?',inclusiveId);
+ // Old edit clients must preserve the saved inclusive setting when omitting the new field.
+ const oldEdit={...product.data};delete oldEdit.priceTaxMode;
+ await s.act(u.ADMIN,'product.update',{...oldEdit,id:inclusiveId,version:product.version,price:236});
+ assert.equal((await s.one('SELECT * FROM records WHERE id=?',inclusiveId)).data.priceTaxMode,'inclusive');
+ await s.act(u.ADMIN,'product.update',{...product.data,id:inclusiveId,version:product.version+1,priceTaxMode:'exclusive'});
+ assert.deepEqual((await s.one('SELECT * FROM records WHERE id=?',id)).data,savedData);
+ const next=await s.act(u.SALES,'quote.create',{projectId,items:[{productId:inclusiveId,quantity:1}],validUntil:'2099-12-31'});
+ assert.equal((await s.one('SELECT * FROM records WHERE id=?',next)).amount,13924);
+ const legacy=await s.act(u.SALES,'quote.create',{projectId,productId:exclusiveId,priceTaxMode:'inclusive',validUntil:'2099-12-31'});
+ assert.equal((await s.one('SELECT * FROM records WHERE id=?',legacy)).data.priceTaxMode,'exclusive');
+ assert.equal((await s.one('SELECT * FROM records WHERE id=?',legacy)).amount,31500);
 });

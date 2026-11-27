@@ -24,7 +24,7 @@ function component(filename) {
   const localRequire = specifier => {
     if (!specifier.startsWith('.') && !specifier.startsWith('@/')) return require(specifier);
     const path = specifier.startsWith('@/') ? resolve(root, specifier.slice(2)) : resolve(dirname(filename), specifier);
-    return existsSync(path) ? require(path) : component(`${path}.tsx`);
+    return existsSync(path) ? require(path) : component(existsSync(`${path}.ts`) ? `${path}.ts` : `${path}.tsx`);
   };
   runInThisContext(`(function(require,module,exports){${source}\n})`, { filename })(localRequire, loaded, loaded.exports);
   return loaded.exports;
@@ -75,4 +75,24 @@ test('coloured lead status picker preserves the named form value and accessible 
     assert.match(html, /<input type="hidden" name="status"/);
     assert.ok(html.includes(`name="status" value="${status}"`), `${status} must be submitted with the form`);
   }
+});
+
+test('quotation previews show the saved tax mode on each item and retain historical tax labels',async()=>{
+ const {itemQuoteTotal}=await import('../lib/quotation.mjs');
+ const Document=component(resolve(root,'components/quotation-document.tsx')).default;
+ const totals=itemQuoteTotal([
+  {name:'Included panel',unitPrice:11800,quantity:1,taxRate:18,priceTaxMode:'inclusive'},
+  {name:'Excluded service',unitPrice:10000,quantity:1,taxRate:5,priceTaxMode:'exclusive'},
+ ]);
+ const data={...totals,customer:'Test customer',company:{name:'Samerika Power'},taxMode:'CGST_SGST'};
+ const html=renderToStaticMarkup(React.createElement(Document,{quote:{id:'QUOTE-MIXED',data},settings:{}}));
+ assert.match(html,/Tax follows each product/);
+ const rows=html.match(/<tr>.*?<\/tr>/g);
+ assert.ok(rows.some(row=>row.includes('Included panel')&&row.includes('118.00')&&row.includes('Tax Included')));
+ assert.ok(rows.some(row=>row.includes('Excluded service')&&row.includes('105.00')&&row.includes('Tax Excluded')));
+ assert.match(html,/223.00/);
+ const historical=itemQuoteTotal([{name:'Old included panel',unitPrice:11800,quantity:1,taxRate:18}],{priceTaxMode:'inclusive'});
+ delete historical.items[0].priceTaxMode;
+ const oldHtml=renderToStaticMarkup(React.createElement(Document,{quote:{data:{...data,...historical}},settings:{}}));
+ assert.match(oldHtml,/Tax Included/);assert.doesNotMatch(oldHtml,/Tax Excluded/);
 });

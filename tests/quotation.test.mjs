@@ -43,3 +43,20 @@ test('inclusive mixed GST, installation, discounts and fractional quantities rec
  assert.equal(itemQuoteTotal([{unitPrice:11800,quantity:1,taxRate:18}],{priceTaxMode:'inclusive',discount:118}).total,0);
  assert.throws(()=>itemQuoteTotal(items,{priceTaxMode:'inclusive',discount:9999}),/Discount exceeds/);
 });
+
+test('mixed product tax settings reconcile without adding GST twice',()=>{
+ const result=itemQuoteTotal([
+  {unitPrice:11800,quantity:2,taxRate:18,priceTaxMode:'inclusive'},
+  {unitPrice:10000,quantity:1,taxRate:5,priceTaxMode:'exclusive'},
+  {unitPrice:1000,quantity:1,taxRate:0,priceTaxMode:'inclusive'},
+ ]);
+ assert.equal(result.priceTaxMode,'mixed');
+ assert.equal(result.subtotal,31000);assert.equal(result.tax,4100);assert.equal(result.total,35100);
+ assert.deepEqual(result.items.map(line=>line.total),[23600,10500,1000]);
+ assert.deepEqual(result.items.map(line=>line.priceTaxMode),['inclusive','exclusive','inclusive']);
+ assert.throws(()=>itemQuoteTotal([{unitPrice:10000,quantity:1,priceTaxMode:'mixed'}]),/each item/);
+ const fractional=itemQuoteTotal([{unitPrice:10501,quantity:1.125,taxRate:5,priceTaxMode:'inclusive'},{unitPrice:9999,quantity:2.123,taxRate:18,priceTaxMode:'exclusive'}]);
+ assert.equal(fractional.items[0].total,Math.round(10501*1.125));
+ assert.equal(fractional.items[1].total,Math.round(9999*2.123)+Math.round(Math.round(9999*2.123)*.18));
+ assert.equal(fractional.subtotal+fractional.tax,fractional.total);
+});
