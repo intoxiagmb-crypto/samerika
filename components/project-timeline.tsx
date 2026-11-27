@@ -79,7 +79,7 @@ export default function ProjectTimeline({ project, records, requiredDocuments, r
   return <section className="project-timeline" aria-labelledby="project-timeline-title" aria-busy={saving}>
     <h3 id="project-timeline-title">Installation timeline</h3><p>हर लाइन पर status बदलें — बदलाव अपने आप save होगा।</p>
     <div className="project-timeline-feedback" role={error ? 'alert' : 'status'}>{error || (saving ? 'Saving…' : 'Pending → Processing → Completed')}</div>
-    <ol>{steps.slice(0, 3).map(milestone)}{documents}{milestone(steps[3], 3)}{approvals}{phases}{steps.slice(4).map((step: Row, index: number) => milestone(step, index + 4))}</ol>
+    <ol>{steps.slice(0, 3).map(milestone)}{documents}{milestone(steps[3], 3)}{approvals}{phases}</ol>
     {manage && live && <button className="button button-secondary" disabled={saving} onClick={() => { void onUpdate('project.update', { ...extra, status: 'Completed' }, 'Project completed'); }}>Complete project</button>}
   </section>;
 }
