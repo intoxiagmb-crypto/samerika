@@ -78,3 +78,21 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .product-card>div:last-child>div{gap:12px;flex-wrap:wrap}
 .product-card-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .product-card-actions .button{padding:10px 12px;font-size:13px}
+
+/* A roomy catalogue picker, portalled above the quotation and its scrolling table. */
+.quotation-item-trigger{display:flex;align-items:center;justify-content:space-between;gap:14px;width:100%;min-height:60px;padding:14px 16px;border:1px solid #b9d0ec;border-radius:12px;background:#fff;color:#123b70;text-align:left;font-size:16px;line-height:1.5}
+.quotation-item-trigger[data-placeholder]{color:#607797}
+.quotation-item-trigger[data-state=open]{border-color:#1769b5;box-shadow:0 0 0 3px #dcecff}
+.quotation-item-trigger>span:first-child{min-width:0}
+.quotation-item-copy{display:flex;flex-direction:column;gap:6px;min-width:0}
+.quotation-item-name{font-size:16px;line-height:1.5;font-weight:650;white-space:normal;overflow-wrap:anywhere}
+.quotation-item-price{font-size:15px;line-height:1.5;color:#3d608d;font-variant-numeric:tabular-nums}
+.quotation-item-menu{z-index:220;width:min(560px,calc(100vw - 24px));max-width:var(--radix-select-content-available-width);max-height:min(440px,var(--radix-select-content-available-height));overflow:hidden;border:1px solid #b9d0ec;border-radius:16px;background:#fff;color:#123b70;box-shadow:0 16px 48px #092d612b;font-family:var(--sans)}
+.quotation-item-options{padding:8px}
+.quotation-item-option{position:relative;min-height:82px;display:flex;align-items:center;padding:16px 48px 16px 16px;border-radius:10px;cursor:pointer;outline:none}
+.quotation-item-option+ .quotation-item-option{margin-top:4px}
+.quotation-item-option[data-state=checked]{background:#e8f2ff}
+.quotation-item-option[data-highlighted]{background:#dcecff;box-shadow:inset 0 0 0 2px #1769b5}
+.quotation-item-option[data-disabled]{opacity:.45;cursor:not-allowed}
+.quotation-item-check{position:absolute;right:16px;top:50%;transform:translateY(-50%);color:#07559b}
+.quotation-item-scroll{display:flex;align-items:center;justify-content:center;min-height:32px;background:#f1f6fd;color:#123b70}
