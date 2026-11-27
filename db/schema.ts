@@ -11,10 +11,10 @@ export const leads = sqliteTable('leads', {
  createdAt: text('created_at').notNull(), updatedAt: text('updated_at').notNull(), version: integer('version').notNull().default(1),
 }, t=>[index('leads_partner_idx').on(t.partnerId), uniqueIndex('leads_email_unique').on(t.customerEmail).where(sql`${t.customerEmail} <> ''`)]);
 export const projects = sqliteTable('projects', {
- id: text('id').primaryKey(), leadId: text('lead_id').notNull().unique().references(()=>leads.id),
+ id: text('id').primaryKey(), leadId: text('lead_id').notNull().references(()=>leads.id),
  managerId: text('manager_id').references(()=>users.id), technicianId: text('technician_id').references(()=>users.id), verifierId: text('verifier_id').references(()=>users.id),
  status: text('status').notNull(), data: text('data').notNull(), createdAt: text('created_at').notNull(), updatedAt: text('updated_at').notNull(), version: integer('version').notNull().default(1),
-});
+}, t=>[uniqueIndex('projects_lead_id_unique').on(t.leadId).where(sql`json_extract(${t.data}, '$.deletedAt') IS NULL`)]);
 export const records = sqliteTable('records', {
  id: text('id').primaryKey(), kind: text('kind').notNull(), projectId: text('project_id').references(()=>projects.id), ownerId: text('owner_id').notNull().references(()=>users.id),
  status: text('status').notNull(), amount: integer('amount').notNull().default(0), reference: text('reference'), data: text('data').notNull(),

@@ -563,16 +563,16 @@ test('admin can delete and restore a project without losing its lead, timeline o
  const deleted=(await s.snapshot(u.ADMIN)).deletedProjects[0];
  assert.equal(deleted.data.deletedBy,u.ADMIN.id);
  assert.ok(deleted.data.deletedAt);
- assert.equal((await s.one('SELECT * FROM leads WHERE id=?',leadId)).status,'Converted');
+ assert.equal((await s.one('SELECT * FROM leads WHERE id=?',leadId)).status,'New');
  assert.deepEqual(await s.one('SELECT * FROM records WHERE id=?',docId),documentBefore);
  await assert.rejects(s.fileAccess(u.CUSTOMER,docId),/Project not found/);
  await assert.rejects(s.act(u.ADMIN,'project.update',{id:projectId,status:'Installation'}),/Project not found/);
- await assert.rejects(s.act(u.ADMIN,'quote.create',{customerId:leadId}),/Restore this project/);
  await s.act(u.ADMIN,'project.restore',{id:projectId,version:deleted.version});
  const restored=await s.one('SELECT * FROM projects WHERE id=?',projectId);
  const {deletionChangeId,...restoredData}=restored.data;
  assert.ok(deletionChangeId);assert.deepEqual(restoredData,before.data);
  assert.equal(restored.status,before.status);
+ assert.equal((await s.one('SELECT * FROM leads WHERE id=?',leadId)).status,'Converted');
  assert.equal((await s.snapshot(u.ADMIN)).deletedProjects.length,0);
  assert.equal((await s.snapshot(u.CUSTOMER)).projects[0].id,projectId);
  assert.equal((await s.fileAccess(u.CUSTOMER,docId)).data.fileKey,'retained-document');
@@ -694,4 +694,58 @@ test('direct WhatsApp publication validates phone and expiry before changing the
   await assert.rejects(createQuotationShare(db,u.ADMIN,id,Date.now(),'https://solar.example.test',{publish:true}),/mobile|expired/);
   assert.equal((await s.one('SELECT * FROM records WHERE id=?',id)).status,'Draft');
  }
+});
+
+
+test('deleted project returns its customer to a new follow-up and allows a fresh project',async()=>{
+ const {s,u}=await setup();const {projectId,leadId}=await createProject(s,u);
+ const before=await s.one('SELECT * FROM leads WHERE id=?',leadId);
+ const project=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ await s.act(u.ADMIN,'project.delete',{id:projectId,version:project.version});
+ let customer=await s.one('SELECT * FROM leads WHERE id=?',leadId);
+ assert.equal(customer.status,'New');assert.equal(customer.data.followUp,'');
+ assert.equal(customer.assigned_to,before.assigned_to);assert.equal(customer.partner_id,before.partner_id);
+ assert.deepEqual(customer.data.activities.slice(0,-1),before.data.activities);
+ assert.match(customer.data.activities.at(-1).note,new RegExp(projectId));
+ assert.equal(customer.data.activities.at(-1).by,u.ADMIN.name);
+ await s.act(u.SALES,'lead.update',{id:leadId,version:customer.version,status:'Contacted',note:'Customer is ready again',followUp:'2099-02-01'});
+ const freshId=await s.act(u.SALES,'project.create',{leadId});
+ assert.notEqual(freshId,projectId);
+ const snapshot=await s.snapshot(u.ADMIN);assert.deepEqual(snapshot.projects.map(p=>p.id),[freshId]);
+ assert.equal(snapshot.deletedProjects[0].id,projectId);
+ assert.ok(snapshot.projects[0].data.phases.every(phase=>phase.status==='Pending'));
+ await assert.rejects(s.act(u.ADMIN,'project.restore',{id:projectId,version:project.version+1}),/already has an active project/);
+ await assert.rejects(s.act(u.SALES,'project.create',{leadId}),/already has a project/);
+ customer=await s.one('SELECT * FROM leads WHERE id=?',leadId);
+ await s.act(u.SALES,'lead.profile',{id:leadId,version:customer.version,name:'Updated after follow-up'});
+ assert.equal((await s.one('SELECT * FROM projects WHERE id=?',freshId)).data.name,'Updated after follow-up');
+ assert.equal((await s.one('SELECT * FROM projects WHERE id=?',projectId)).data.name,project.data.name);
+});
+
+test('a new quotation after project deletion uses a fresh project and retains archived records',async()=>{
+ const {s,u}=await setup();const {projectId,leadId}=await createProject(s,u);
+ const oldQuote=await s.createRecord(u.ADMIN,'quote',projectId,'Draft',{customer:lead.name});
+ const project=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ await s.act(u.ADMIN,'project.delete',{id:projectId,version:project.version});
+ const productId=await s.act(u.ADMIN,'product.create',{name:'New kit',brand:'Test',category:'Solar kit',capacity:3,price:100,system:'On-grid',warranty:'Test'});
+ const id=await s.act(u.SALES,'quote.create',{customerId:leadId,items:[{productId,quantity:1}],validUntil:'2099-12-31'});
+ const quote=await s.one('SELECT * FROM records WHERE id=?',id);
+ assert.notEqual(quote.project_id,projectId);
+ assert.equal((await s.one('SELECT * FROM records WHERE id=?',oldQuote)).project_id,projectId);
+ assert.equal((await s.one('SELECT * FROM leads WHERE id=?',leadId)).status,'Converted');
+});
+
+
+test('migration reopens previously deleted customers once and preserves their activity',async()=>{
+ const {s,u,db}=await setup();const {projectId,leadId}=await createProject(s,u);
+ const customer=await s.one('SELECT * FROM leads WHERE id=?',leadId);
+ await s.run("UPDATE projects SET data=json_set(data,'$.deletedAt',?) WHERE id=?",new Date().toISOString(),projectId);
+ await s.run("DELETE FROM solaris_migrations WHERE name='0005_confused_cammi.sql'");
+ await migrate(db.client);
+ const reopened=await s.one('SELECT * FROM leads WHERE id=?',leadId);
+ assert.equal(reopened.status,'New');assert.equal(reopened.data.followUp,'');
+ assert.deepEqual(reopened.data.activities.slice(0,-1),customer.data.activities);
+ assert.match(reopened.data.activities.at(-1).note,/returned to Leads/);
+ await migrate(db.client);
+ assert.deepEqual(await s.one('SELECT * FROM leads WHERE id=?',leadId),reopened);
 });

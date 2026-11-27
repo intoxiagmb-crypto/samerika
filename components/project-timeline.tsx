@@ -12,24 +12,24 @@ import { trackingSteps } from '@/lib/application-tracking.mjs';
 type Row = Record<string, any>;
 type Props = {
   project: Row; records: Row[]; requiredDocuments: string[]; role: string;
-  saving: boolean; error: string;
-  onUpdate: (action: string, values: Row, message?: string) => Promise<unknown>;
-  onUpload: (file: File, documentType: string) => Promise<void>;
+  saving?: boolean; error?: string; readOnly?: boolean;
+  onUpdate?: (action: string, values: Row, message?: string) => Promise<unknown>;
+  onUpload?: (file: File, documentType: string) => Promise<void>;
 };
 const statuses = ['Pending', 'Processing', 'Completed'];
 const displayStatus = (status: string) => status === 'In Progress' ? 'Processing' : status;
 
-export default function ProjectTimeline({ project, records, requiredDocuments, role, saving, error, onUpdate, onUpload }: Props) {
+export default function ProjectTimeline({ project, records, requiredDocuments, role, saving = false, error = '', readOnly = false, onUpdate, onUpload }: Props) {
   const titleId = useId();
   const [documentType, setDocumentType] = useState(requiredDocuments[0] || 'Other');
   const [notes, setNotes] = useState<Record<string, string>>({});
   const steps = trackingSteps(project.data.tracking);
   const live = !['Completed', 'Cancelled'].includes(project.status);
-  const manage = ['ADMIN', 'MANAGER'].includes(role);
-  const tracking = ['ADMIN', 'MANAGER', 'SALES'].includes(role);
-  const technical = ['ADMIN', 'MANAGER', 'TECHNICAL'].includes(role);
-  const reviewer = ['ADMIN', 'VERIFIER'].includes(role);
-  const upload = ['ADMIN', 'MANAGER', 'TECHNICAL', 'VERIFIER', 'FINANCE', 'CUSTOMER', 'PARTNER'].includes(role);
+  const manage = !readOnly && ['ADMIN', 'MANAGER'].includes(role);
+  const tracking = !readOnly && ['ADMIN', 'MANAGER', 'SALES'].includes(role);
+  const technical = !readOnly && ['ADMIN', 'MANAGER', 'TECHNICAL'].includes(role);
+  const reviewer = !readOnly && ['ADMIN', 'VERIFIER'].includes(role);
+  const upload = !readOnly && ['ADMIN', 'MANAGER', 'TECHNICAL', 'VERIFIER', 'FINANCE', 'CUSTOMER', 'PARTNER'].includes(role);
   const projectRecords = records.filter(record => record.project_id === project.id);
   const extra = { id: project.id, version: project.version };
   const draft = (id: string, saved = '') => notes[id] ?? saved;
@@ -53,16 +53,16 @@ export default function ProjectTimeline({ project, records, requiredDocuments, r
   function milestone(step: Row, index: number) {
     const unlocked = steps.slice(0, index).every((item: Row) => item.status === 'Completed');
     return row(step.id, step.label, step.status,
-      selector(step.label, step.status, tracking, status => { void onUpdate('project.tracking', { ...extra, quick: true, stepId: step.id, status: status === 'Processing' ? 'In Progress' : status, note: draft(step.id, step.note || ''), reference: step.reference || '' }, `${step.label}: ${status}`); }, !unlocked),
+      selector(step.label, step.status, tracking, status => { void onUpdate?.('project.tracking', { ...extra, quick: true, stepId: step.id, status: status === 'Processing' ? 'In Progress' : status, note: draft(step.id, step.note || ''), reference: step.reference || '' }, `${step.label}: ${status}`); }, !unlocked),
       tracking && live && <details className="project-step-notes"><summary>Notes / reference</summary>{input(step.id, `${step.label} note`, step.note || '')}{step.reference && <small>{step.reference}</small>}</details>,
       !unlocked && tracking && live ? 'Complete earlier tracking steps first.' : step.updatedBy ? `Updated by ${step.updatedBy} · ${step.eventDate}` : undefined);
   }
   const requiredUploads = requiredProjectDocuments(requiredDocuments, projectRecords);
   const documentation = documentationStatus(requiredUploads, project.data.documentation);
   const documents = row('documentation', 'Documentation', documentation,
-    selector('Documentation', documentation, reviewer, status => { void onUpdate('project.documentation', { ...extra, status, documents: requiredUploads.filter(Boolean).map((document: Row) => ({ id: document.id, version: document.version })) }, `Documentation: ${status}`); }),
-    <details className="project-documentation-files"><summary>Upload / view documents</summary>
-      {upload && live && <div className="project-documentation-upload"><select aria-label="Documentation document type" value={documentType} disabled={saving} onChange={event => setDocumentType(event.target.value)}>{requiredDocuments.map(name => <option key={name} value={name}>{name}</option>)}</select><label className="project-upload"><Upload size={14}/>Upload document<input aria-label="Upload documentation" type="file" accept="application/pdf,image/jpeg,image/png" disabled={saving} onChange={event => { const file = event.target.files?.[0]; event.target.value = ''; if (file) void onUpload(file, documentType); }}/></label></div>}
+    selector('Documentation', documentation, reviewer, status => { void onUpdate?.('project.documentation', { ...extra, status, documents: requiredUploads.filter(Boolean).map((document: Row) => ({ id: document.id, version: document.version })) }, `Documentation: ${status}`); }),
+    <details className="project-documentation-files"><summary>{readOnly ? 'View documents' : 'Upload / view documents'}</summary>
+      {upload && live && <div className="project-documentation-upload"><select aria-label="Documentation document type" value={documentType} disabled={saving} onChange={event => setDocumentType(event.target.value)}>{requiredDocuments.map(name => <option key={name} value={name}>{name}</option>)}</select><label className="project-upload"><Upload size={14}/>Upload document<input aria-label="Upload documentation" type="file" accept="application/pdf,image/jpeg,image/png" disabled={saving} onChange={event => { const file = event.target.files?.[0]; event.target.value = ''; if (file) void onUpload?.(file, documentType); }}/></label></div>}
       {requiredDocuments.map((name, index) => { const document = requiredUploads[index]; return <div className="project-documentation-file" key={name}><strong>{name}</strong>{document ? <>{role !== 'PARTNER' ? <a href={`/api/files?id=${encodeURIComponent(document.id)}`}>{document.data.name}</a> : <span>{document.data.name}</span>}<small>{document.status}</small></> : <small>Not uploaded</small>}</div>; })}
       <small>PDF, JPEG or PNG · up to 4 MB per file</small>
     </details>, `${requiredUploads.filter(Boolean).length} of ${requiredDocuments.length} documents uploaded`);
@@ -72,14 +72,14 @@ export default function ProjectTimeline({ project, records, requiredDocuments, r
     const cash = name === 'Bank approval' && project.data.finance === 'Cash';
     const status = cash ? 'Cash' : !approval || approval.status === 'Submitted' ? 'Pending' : approval.status === 'Approved' ? 'Completed' : approval.status;
     return row(`approval-${name}`, name, status,
-      selector(name, status, manage, value => { void onUpdate('project.approval', { ...extra, name, status: value === 'Completed' ? 'Approved' : value === 'Pending' ? 'Submitted' : value === 'Cash' ? 'Cash' : 'Processing', reference: draft(`approval-${name}`, approval?.data.reference || '') }, `${name}: ${value}`); }, false, name === 'Bank approval' ? [...statuses, 'Cash'] : statuses),
+      selector(name, status, manage, value => { void onUpdate?.('project.approval', { ...extra, name, status: value === 'Completed' ? 'Approved' : value === 'Pending' ? 'Submitted' : value === 'Cash' ? 'Cash' : 'Processing', reference: draft(`approval-${name}`, approval?.data.reference || '') }, `${name}: ${value}`); }, false, name === 'Bank approval' ? [...statuses, 'Cash'] : statuses),
       cash ? <small>Cash payment · bank approval is not required.</small> : manage && live ? input(`approval-${name}`, `${name} reference (required to complete)`, approval?.data.reference || '') : approval?.data.reference && <small>{approval.data.reference}</small>);
   });
   const subsidy = project.data.subsidy || { status: 'Pending' };
   const handoverIndex = project.data.phases.findIndex((phase: Row) => phase.name === 'Customer handover');
   const subsidyUnlocked = handoverIndex >= 0 && project.data.phases.slice(0, handoverIndex).filter((phase: Row) => phase.name !== 'Quality inspection').every((phase: Row) => phase.status === 'Completed');
   const subsidyRow = row('subsidy', 'Subsidy', subsidy.status,
-    selector('Subsidy', subsidy.status, technical, status => { void onUpdate('project.update', { ...extra, subsidyStatus: status, subsidyNote: draft('subsidy', subsidy.note || '') }, `Subsidy: ${status}`); }, !subsidyUnlocked),
+    selector('Subsidy', subsidy.status, technical, status => { void onUpdate?.('project.update', { ...extra, subsidyStatus: status, subsidyNote: draft('subsidy', subsidy.note || '') }, `Subsidy: ${status}`); }, !subsidyUnlocked),
     technical && live && <details className="project-step-notes"><summary>Notes / reference (optional)</summary>{input('subsidy', 'Subsidy note / reference', subsidy.note || '')}</details>,
     !subsidyUnlocked && technical && live ? 'Complete the previous installation phases first.' : subsidy.updatedBy ? `Updated by ${subsidy.updatedBy}` : undefined);
   const phases = project.data.phases.map((phase: Row, index: number) => {
@@ -89,16 +89,16 @@ export default function ProjectTimeline({ project, records, requiredDocuments, r
     const unlocked = project.data.phases.slice(0, index).filter((item: Row) => item.name !== 'Quality inspection').every((item: Row) => item.status === 'Completed');
     const editable = handover ? manage : technical;
     const phaseRow = row(`phase-${index}`, name, phase.status,
-      selector(name, phase.status, editable, status => { void onUpdate('project.update', { ...extra, phase: index, phaseStatus: status, evidence: draft(`phase-${index}`, phase.evidence || '') }, `${name}: ${status}`); }, !unlocked),
+      selector(name, phase.status, editable, status => { void onUpdate?.('project.update', { ...extra, phase: index, phaseStatus: status, evidence: draft(`phase-${index}`, phase.evidence || '') }, `${name}: ${status}`); }, !unlocked),
       editable && live && (handover ? input(`phase-${index}`, 'Customer acknowledgement (required to complete)', phase.evidence || '') : <details className="project-step-notes"><summary>Notes / evidence (optional)</summary>{input(`phase-${index}`, `${name} evidence`, phase.evidence || '')}</details>),
       !unlocked && editable && live ? 'Complete the previous installation phase first.' : phase.updatedBy ? `Updated by ${phase.updatedBy}` : undefined);
     return handover ? <Fragment key={`phase-${index}`}>{subsidyRow}{phaseRow}</Fragment> : phaseRow;
   });
   return <section className="project-timeline" aria-labelledby={titleId} aria-busy={saving}>
-    <h3 id={titleId}>Installation timeline</h3><p>हर लाइन पर status बदलें — बदलाव अपने आप save होगा।</p>
-    <div className="project-timeline-feedback" role={error ? 'alert' : 'status'}>{error || (saving ? 'Saving…' : 'Pending → Processing → Completed')}</div>
+    <h3 id={titleId}>Installation timeline</h3><p>{readOnly ? 'Project में किए गए बदलाव यहाँ दिखाई देते हैं।' : 'हर लाइन पर status बदलें — बदलाव अपने आप save होगा।'}</p>
+    {!readOnly && <div className="project-timeline-feedback" role={error ? 'alert' : 'status'}>{error || (saving ? 'Saving…' : 'Pending → Processing → Completed')}</div>}
     <ol>{steps.slice(0, 3).map(milestone)}{documents}{milestone(steps[3], 3)}{approvals}{phases}</ol>
     <ProjectHistory project={project} records={projectRecords}/>
-    {manage && live && <button className="button button-secondary" disabled={saving} onClick={() => { void onUpdate('project.update', { ...extra, status: 'Completed' }, 'Project completed'); }}>Complete project</button>}
+    {manage && live && <button className="button button-secondary" disabled={saving} onClick={() => { void onUpdate?.('project.update', { ...extra, status: 'Completed' }, 'Project completed'); }}>Complete project</button>}
   </section>;
 }
