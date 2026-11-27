@@ -2,6 +2,7 @@
 
 import { Fragment, useState } from 'react';
 import { Check, Clock3, LoaderCircle, AlertCircle, Upload } from 'lucide-react';
+import { requiredProjectDocuments, documentationStatus } from '@/lib/documentation.mjs';
 import { trackingSteps } from '@/lib/application-tracking.mjs';
 
 // The portal snapshot contains versioned JSON records shared with the business service.
@@ -17,6 +18,7 @@ const statuses = ['Pending', 'Processing', 'Completed'];
 const displayStatus = (status: string) => status === 'In Progress' ? 'Processing' : status;
 
 export default function ProjectTimeline({ project, records, requiredDocuments, role, saving, error, onUpdate, onUpload }: Props) {
+  const [documentType, setDocumentType] = useState(requiredDocuments[0] || 'Other');
   const [notes, setNotes] = useState<Record<string, string>>({});
   const steps = trackingSteps(project.data.tracking);
   const live = !['Completed', 'Cancelled'].includes(project.status);
@@ -52,14 +54,15 @@ export default function ProjectTimeline({ project, records, requiredDocuments, r
       tracking && live && <details className="project-step-notes"><summary>Notes / reference</summary>{input(step.id, `${step.label} note`, step.note || '')}{step.reference && <small>{step.reference}</small>}</details>,
       !unlocked && tracking && live ? 'Complete earlier tracking steps first.' : step.updatedBy ? `Updated by ${step.updatedBy} · ${step.eventDate}` : undefined);
   }
-  const documents = requiredDocuments.map(name => {
-    const document = projectRecords.find(record => record.kind === 'document' && record.data.documentType === name);
-    const status = !document || document.status === 'Pending' ? 'Pending' : document.status === 'Verified' ? 'Completed' : document.status === 'Under Review' ? 'Processing' : document.status === 'Submitted' ? 'Pending' : document.status;
-    return row(`document-${name}`, name, status,
-      selector(name, status, reviewer && !!document, value => { void onUpdate('record.update', { id: document!.id, version: document!.version, status: value === 'Completed' ? 'Verified' : value === 'Processing' ? 'Under Review' : 'Pending' }, `${name}: ${value}`); }),
-      <div className="project-step-files">{document && role !== 'PARTNER' && <a href={`/api/files?id=${encodeURIComponent(document.id)}`}>{document.data.name}</a>}{document && role === 'PARTNER' && <span>{document.data.name}</span>}{upload && live && <label className="project-upload"><Upload size={14}/>{document ? 'Replace document' : 'Upload document'}<input aria-label={`Upload ${name}`} type="file" accept="application/pdf,image/jpeg,image/png" disabled={saving} onChange={event => { const file = event.target.files?.[0]; event.target.value = ''; if (file) void onUpload(file, name); }}/></label>}</div>,
-      document ? document.status === 'Submitted' ? 'Uploaded · ready to review and complete' : `Document: ${document.status}` : 'Upload PDF, JPEG or PNG · up to 4 MB');
-  });
+  const requiredUploads = requiredProjectDocuments(requiredDocuments, projectRecords);
+  const documentation = documentationStatus(requiredUploads, project.data.documentation);
+  const documents = row('documentation', 'Documentation', documentation,
+    selector('Documentation', documentation, reviewer, status => { void onUpdate('project.documentation', { ...extra, status, documents: requiredUploads.filter(Boolean).map((document: Row) => ({ id: document.id, version: document.version })) }, `Documentation: ${status}`); }),
+    <details className="project-documentation-files"><summary>Upload / view documents</summary>
+      {upload && live && <div className="project-documentation-upload"><select aria-label="Documentation document type" value={documentType} disabled={saving} onChange={event => setDocumentType(event.target.value)}>{requiredDocuments.map(name => <option key={name} value={name}>{name}</option>)}</select><label className="project-upload"><Upload size={14}/>Upload document<input aria-label="Upload documentation" type="file" accept="application/pdf,image/jpeg,image/png" disabled={saving} onChange={event => { const file = event.target.files?.[0]; event.target.value = ''; if (file) void onUpload(file, documentType); }}/></label></div>}
+      {requiredDocuments.map((name, index) => { const document = requiredUploads[index]; return <div className="project-documentation-file" key={name}><strong>{name}</strong>{document ? <>{role !== 'PARTNER' ? <a href={`/api/files?id=${encodeURIComponent(document.id)}`}>{document.data.name}</a> : <span>{document.data.name}</span>}<small>{document.status}</small></> : <small>Not uploaded</small>}</div>; })}
+      <small>PDF, JPEG or PNG · up to 4 MB per file</small>
+    </details>, `${requiredUploads.filter(Boolean).length} of ${requiredDocuments.length} documents uploaded`);
   const approvalNames = Array.from(new Set([...(project.data.requiredApprovals || []), ...(project.data.finance === 'Cash' ? ['Bank approval'] : [])]));
   const approvals = approvalNames.map((name: string) => {
     const approval = projectRecords.find(record => record.kind === 'approval' && record.data.name === name);

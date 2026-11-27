@@ -460,3 +460,48 @@ test('Subsidy works on legacy projects with a hidden quality phase and an existi
  const saved=await s.one('SELECT * FROM projects WHERE id=?',projectId);
  assert.deepEqual(saved.data.phases,phases);assert.equal(saved.data.handoverEvidence,'Original customer signature');assert.equal(saved.data.subsidy.status,'Processing');
 });
+
+test('Documentation reviews required uploads together and preserves files and unrelated records',async()=>{
+ const {s,u}=await setup();const {projectId}=await createProject(s,u);
+ const update=async(status,documents)=>{const p=await s.one('SELECT * FROM projects WHERE id=?',projectId);return s.act(u.VERIFIER,'project.documentation',{id:projectId,version:p.version,status,documents});};
+ await update('Processing',[]);
+ await assert.rejects(update('Completed',[]),/Upload all required documents/);
+ const ids=[];for(const documentType of DEFAULT_SETTINGS.requiredDocuments)ids.push(await s.upload(u.CUSTOMER,{projectId,documentType,name:'file.pdf',mime:'application/pdf',size:30,key:`private-${documentType}`}));
+ const unrelated=await s.upload(u.MANAGER,{projectId,documentType:'Payment evidence',name:'payment.pdf',mime:'application/pdf',size:30,key:'payment-key'});
+ const snapshots=await Promise.all(ids.map(id=>s.one('SELECT * FROM records WHERE id=?',id)));
+ await update('Completed',snapshots.map(record=>({id:record.id,version:record.version})));
+ for(const original of snapshots){const saved=await s.one('SELECT * FROM records WHERE id=?',original.id);assert.equal(saved.status,'Verified');assert.equal(saved.data.fileKey,original.data.fileKey);assert.equal(saved.data.review.by,u.VERIFIER.id);}
+ assert.equal((await s.one('SELECT * FROM records WHERE id=?',unrelated)).status,'Submitted');
+ let p=await s.one('SELECT * FROM projects WHERE id=?',projectId);assert.equal(p.data.documentation.status,'Completed');assert.deepEqual(p.data.documentation.history.map(entry=>entry.status),['Processing','Completed']);
+ const latest=await Promise.all(ids.map(id=>s.one('SELECT * FROM records WHERE id=?',id)));
+ await update('Pending',latest.map(record=>({id:record.id,version:record.version})));
+ for(const id of ids)assert.equal((await s.one('SELECT * FROM records WHERE id=?',id)).status,'Pending');
+ p=await s.one('SELECT * FROM projects WHERE id=?',projectId);assert.equal(p.data.documentation.status,'Pending');
+});
+
+test('Documentation rejects stale document reviews without partially updating other files',async()=>{
+ const {s,u}=await setup();const {projectId}=await createProject(s,u);
+ const ids=[];for(const documentType of DEFAULT_SETTINGS.requiredDocuments)ids.push(await s.upload(u.CUSTOMER,{projectId,documentType,name:'file.pdf',mime:'application/pdf',size:30,key:'private-file'}));
+ const originals=await Promise.all(ids.map(id=>s.one('SELECT * FROM records WHERE id=?',id)));
+ const p=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ const patch={id:projectId,version:p.version,status:'Completed',documents:originals.map(record=>({id:record.id,version:record.version}))};
+ for(const role of ['CUSTOMER','PARTNER','MANAGER','TECHNICAL','SALES','FINANCE'])await assert.rejects(s.act(u[role],'project.documentation',patch),e=>e.status===403);
+ await s.act(u.VERIFIER,'record.update',{id:ids[0],version:originals[0].version,status:'Rejected',note:'Unreadable file'});
+ await assert.rejects(s.act(u.VERIFIER,'project.documentation',patch),e=>e.status===409);
+ assert.equal((await s.one('SELECT * FROM records WHERE id=?',ids[0])).status,'Rejected');assert.equal((await s.one('SELECT * FROM records WHERE id=?',ids[1])).status,'Submitted');
+ assert.deepEqual(await s.one('SELECT * FROM projects WHERE id=?',projectId),p);
+});
+
+test('Documentation completion follows the latest uploaded file instead of an older verified copy',async()=>{
+ const {requiredProjectDocuments,documentationStatus}=await import('../lib/documentation.mjs');
+ const {s,u}=await setup();const {projectId}=await createProject(s,u);await completeProject(s,u,projectId);
+ let p=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ await s.run('UPDATE projects SET status=? WHERE id=?','Installation',projectId);
+ const name=DEFAULT_SETTINGS.requiredDocuments[0];
+ const id=await s.upload(u.CUSTOMER,{projectId,documentType:name,name:'replacement.pdf',mime:'application/pdf',size:30,key:'replacement-key'});
+ await s.run('UPDATE records SET created_at=? WHERE id=?','2099-01-01T00:00:00.000Z',id);
+ const records=await s.all('SELECT * FROM records WHERE project_id=?',projectId);
+ assert.equal(documentationStatus(requiredProjectDocuments(DEFAULT_SETTINGS.requiredDocuments,records),{status:'Completed'}),'Pending');
+ p=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ await assert.rejects(s.act(u.MANAGER,'project.update',{id:projectId,version:p.version,status:'Completed'}),/Verify the required document/);
+});
