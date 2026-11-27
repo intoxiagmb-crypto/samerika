@@ -18,13 +18,14 @@ export default function SiteFooter() {
           <Link href="/projects">Projects</Link>
           <Link href="/programs">Programs</Link>
           <a href="/#solutions">Our offerings</a>
+          <a href="/#solar-products">Solar products</a>
         </nav>
         <nav className="sh-site-footer-nav" aria-label="Helpful information footer navigation">
           <h3>Helpful links</h3>
           <a href="/#why-samerika">Why Samerika</a>
           <a href="/#how-it-works">How it works</a>
           <a href="/#faqs">FAQs & answers</a>
-          <Link href="/enquiry" scroll={false}>Contact our team</Link>
+          <Link href="/enquiry?interest=callback" scroll={false}>Request a Callback</Link>
         </nav>
       </div>
       <div className="sh-site-footer-help">

@@ -12,6 +12,7 @@ import './home.css';
 import './home-subsidy.css';
 import './home-highlights.css';
 import './home-projects.css';
+import './home-products.css';
 
 const offerings = [
   { title: 'Homes', icon: House, property: 'Residential', description: 'Make room for clean energy on the roof you already have.', note: 'For your everyday energy', className: 'home', category: 'Residential', features: ['Rooftop assessment', 'Personalised quotation'], cta: 'Explore home solar' },
@@ -48,7 +49,7 @@ export default function HomePage() {
     <section className="sh-hero" id="home-content" aria-labelledby="home-title">
       <Image src="/images/samerika-rooftop-hero.webp" alt="Illustrative rooftop solar canopy over a sunlit Indian home terrace" fill sizes="(max-width: 700px) 1200px, 100vw" preload className="sh-hero-image"/>
       <div className="sh-hero-shade"/>
-      <div className="sh-hero-content"><span className="sh-eyebrow"><span/> SOLAR POWER. EVERYDAY POSSIBILITIES.</span><h1 id="home-title">A brighter future.<br/>Starts on <span>your roof.</span></h1><p>Make your move to solar with a team that connects every step—from your first enquiry to installation.</p><div className="sh-hero-actions"><Link href="/enquiry" scroll={false} className="sh-button sh-primary">Let’s talk solar <ArrowRight size={19}/></Link><a href="#solutions" className="sh-hero-link">Explore our solutions <ArrowUpRight size={18}/></a></div><div className="sh-hero-promise"><ShieldCheck size={19}/><span>Your rooftop. Your requirements. A plan built around you.</span></div></div>
+      <div className="sh-hero-content"><span className="sh-eyebrow"><span/> SOLAR POWER. EVERYDAY POSSIBILITIES.</span><h1 id="home-title">A brighter future.<br/>Starts on <span>your roof.</span></h1><p>Make your move to solar with a team that connects every step—from your first enquiry to installation.</p><div className="sh-hero-actions"><Link href="/enquiry" scroll={false} className="sh-button sh-primary">Get Free Solar Quote <ArrowRight size={19}/></Link><a href="#solutions" className="sh-hero-link">Explore our solutions <ArrowUpRight size={18}/></a></div><div className="sh-hero-promise"><ShieldCheck size={19}/><span>Your rooftop. Your requirements. A plan built around you.</span></div></div>
       <div className="sh-hero-bottom"><span><ClipboardCheck size={19}/> Site-led planning</span><span><FileText size={19}/> Clear quotations</span><span><CheckCircle2 size={19}/> Connected project tracking</span></div>
     </section>
 
@@ -69,7 +70,7 @@ export default function HomePage() {
           <span className="sh-subsidy-label"><Sun size={20} aria-hidden="true"/> GOVERNMENT SOLAR PROGRAM</span>
           <h2 id="subsidy-heading">PM Surya Ghar <span>Muft Bijli Yojana</span></h2>
           <p>Turn your rooftop into solar savings with subsidy support for eligible homes in Uttar Pradesh.</p>
-          <div className="sh-subsidy-actions"><Link href="/programs" className="sh-button sh-primary">View subsidy details</Link><Link href="/enquiry?property=Residential&program=pm-surya-ghar" scroll={false}>Enquire with Samerika</Link></div>
+          <div className="sh-subsidy-actions"><Link href="/enquiry?property=Residential&program=pm-surya-ghar" scroll={false} className="sh-button sh-primary">Apply for Solar Subsidy <ArrowRight size={18}/></Link><Link href="/programs">View subsidy details</Link></div>
         </div>
         <div className="sh-subsidy-amount">
           <span>COMBINED SUBSIDY IN UTTAR PRADESH</span>
@@ -87,6 +88,15 @@ export default function HomePage() {
         <div className="sh-solution-body"><span className="sh-solution-note">{note}</span><h3>{title}</h3><p>{description}</p><ul>{features.map(feature=><li key={feature}><Check size={14}/>{feature}</li>)}</ul><div className="sh-solution-cta"><span>{cta}</span><span className="sh-solution-arrow"><ArrowUpRight size={19}/></span></div></div>
       </Link>)}</div>
       <p className="sh-solutions-help"><MessageCircle size={16}/> Not sure where to start? <Link href="/enquiry" scroll={false}>Talk to our solar team <ArrowRight size={14}/></Link></p>
+    </section>
+
+    <section className="sh-section sh-products" id="solar-products" aria-labelledby="products-heading">
+      <div className="sh-products-heading"><div><span className="sh-eyebrow">SOLAR PRODUCTS & SYSTEMS</span><h2 id="products-heading">The right equipment.<br/><em>For your solar plan.</em></h2></div><div><p>Explore equipment for your rooftop. Ask our team about available models, pricing and compatibility.</p><Link href="/enquiry?interest=products" scroll={false} className="sh-button sh-primary">Get Price &amp; Details <ArrowRight size={18}/></Link></div></div>
+      <div className="sh-products-grid">{[
+        {id:'panels',title:'Solar panels',Icon:PanelsTopLeft,tag:'GENERATE',text:'Discuss panel capacity, available models and the right fit for your rooftop.'},
+        {id:'inverters',title:'Solar inverters',Icon:Sun,tag:'CONVERT',text:'Find an inverter suited to your proposed system and electricity requirements.'},
+        {id:'solar-kits',title:'Solar kits & systems',Icon:House,tag:'CONNECT',text:'Plan a complete solar setup with equipment selected for your site.'},
+      ].map(({id,title,Icon,tag,text})=><article className="sh-product-card" key={id}><div className="sh-product-visual"><Icon size={68} strokeWidth={1.2} aria-hidden="true"/><span>{tag}</span></div><div className="sh-product-copy"><h3>{title}</h3><p>{text}</p><Link href={`/enquiry?interest=${id}`} scroll={false} aria-label={`Enquire Now about ${title}`}>Enquire Now <ArrowUpRight size={19}/></Link></div></article>)}</div>
     </section>
 
     <section className="sh-project-gallery" id="featured-projects" aria-labelledby="gallery-heading">
@@ -171,11 +181,11 @@ export default function HomePage() {
     <div className="sh-closing" id="get-in-touch">
       <section className="sh-invitation" aria-labelledby="invitation-heading"><div className="sh-invitation-card">
         <div className="sh-invitation-copy"><span className="sh-invitation-label"><Sun size={19}/> A NEW CHAPTER FOR YOUR ROOFTOP</span><h2 id="invitation-heading">Good energy starts<br/><em>with a conversation.</em></h2><p>Tell us about your space. Let’s explore a solar plan that fits.</p></div>
-        <div className="sh-invitation-action"><Link href="/enquiry" scroll={false} className="sh-button sh-dark">Talk to our solar team <ArrowRight size={19}/></Link><span><ShieldCheck size={15}/> No account needed. Our staff will follow up.</span></div>
+        <div className="sh-invitation-action"><Link href="/enquiry?interest=callback" scroll={false} className="sh-button sh-dark">Request a Callback <ArrowRight size={19}/></Link><span><ShieldCheck size={15}/> No account needed. Our staff will follow up.</span></div>
         <Sun className="sh-invitation-sun" size={310} strokeWidth={.65} aria-hidden="true"/>
       </div></section>
 
     </div>
-    <div className="sh-mobile-cta"><Link href="/enquiry" scroll={false} className="sh-button sh-primary">Enquire now <ArrowRight size={17}/></Link></div>
+    <div className="sh-mobile-cta"><Link href="/enquiry" scroll={false} className="sh-button sh-primary">Get Free Solar Quote <ArrowRight size={17}/></Link></div>
   </main>;
 }
