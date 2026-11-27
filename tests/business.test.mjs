@@ -564,7 +564,7 @@ test('admin can delete and restore a project without losing its lead, timeline o
  const deleted=(await s.snapshot(u.ADMIN)).deletedProjects[0];
  assert.equal(deleted.data.deletedBy,u.ADMIN.id);
  assert.ok(deleted.data.deletedAt);
- assert.equal((await s.one('SELECT * FROM leads WHERE id=?',leadId)).status,'New');
+ assert.equal((await s.one('SELECT * FROM leads WHERE id=?',leadId)).status,'Project Back');
  assert.deepEqual(await s.one('SELECT * FROM records WHERE id=?',docId),documentBefore);
  await assert.rejects(s.fileAccess(u.CUSTOMER,docId),/Project not found/);
  await assert.rejects(s.act(u.ADMIN,'project.update',{id:projectId,status:'Installation'}),/Project not found/);
@@ -704,7 +704,7 @@ test('deleted project returns its customer to a new follow-up and allows a fresh
  const project=await s.one('SELECT * FROM projects WHERE id=?',projectId);
  await s.act(u.ADMIN,'project.delete',{id:projectId,version:project.version});
  let customer=await s.one('SELECT * FROM leads WHERE id=?',leadId);
- assert.equal(customer.status,'New');assert.equal(customer.data.followUp,'');
+ assert.equal(customer.status,'Project Back');assert.equal(customer.data.activities.at(-1).status,'Project Back');assert.equal(customer.data.followUp,'');
  assert.equal(customer.assigned_to,before.assigned_to);assert.equal(customer.partner_id,before.partner_id);
  assert.deepEqual(customer.data.activities.slice(0,-1),before.data.activities);
  assert.match(customer.data.activities.at(-1).note,new RegExp(projectId));
@@ -741,10 +741,10 @@ test('migration reopens previously deleted customers once and preserves their ac
  const {s,u,db}=await setup();const {projectId,leadId}=await createProject(s,u);
  const customer=await s.one('SELECT * FROM leads WHERE id=?',leadId);
  await s.run("UPDATE projects SET data=json_set(data,'$.deletedAt',?) WHERE id=?",new Date().toISOString(),projectId);
- await s.run("DELETE FROM solaris_migrations WHERE name='0005_confused_cammi.sql'");
+ await s.run("DELETE FROM solaris_migrations WHERE name IN ('0005_confused_cammi.sql','0006_project_back_status.sql')");
  await migrate(db.client);
  const reopened=await s.one('SELECT * FROM leads WHERE id=?',leadId);
- assert.equal(reopened.status,'New');assert.equal(reopened.data.followUp,'');
+ assert.equal(reopened.status,'Project Back');assert.equal(reopened.data.followUp,'');
  assert.deepEqual(reopened.data.activities.slice(0,-1),customer.data.activities);
  assert.match(reopened.data.activities.at(-1).note,/returned to Leads/);
  await migrate(db.client);
@@ -763,7 +763,7 @@ test('lead inbox moves customers to projects and returns deleted customers for c
  assert.ok(snapshot.leads.some(item=>item.id===leadId),'Customer profile remains available to the project and quotations');
  const project=snapshot.projects.find(item=>item.id===projectId);
  await s.act(u.ADMIN,'project.delete',{id:projectId,version:project.version});
- const returned=(await inbox())[0];assert.equal(returned.id,leadId);assert.equal(returned.status,'New');
+ const returned=(await inbox())[0];assert.equal(returned.id,leadId);assert.equal(returned.status,'Project Back');
  await s.act(u.ADMIN,'lead.update',{id:leadId,version:returned.version,status:'Contacted',note:'Follow-up after project deletion'});
  snapshot=await s.snapshot(u.ADMIN);
  await s.act(u.ADMIN,'project.restore',{id:projectId,version:snapshot.deletedProjects[0].version});
@@ -772,4 +772,23 @@ test('lead inbox moves customers to projects and returns deleted customers for c
  await s.act(u.ADMIN,'project.delete',{id:projectId,version:snapshot.projects[0].version});
  const nextProjectId=await s.act(u.ADMIN,'project.create',{leadId});
  assert.notEqual(nextProjectId,projectId);assert.equal((await inbox()).length,0);
+});
+
+
+test('Project Back migration relabels returned New leads without changing fresh enquiries or follow-ups',async()=>{
+ const {s,u,db}=await setup();const {leadId,projectId}=await createProject(s,u);
+ const project=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ await s.act(u.ADMIN,'project.delete',{id:projectId,version:project.version});
+ await s.run("UPDATE leads SET status='New' WHERE id=?",leadId);
+ const freshId=await s.act(u.ADMIN,'lead.create',{...lead,email:'fresh@example.test',mobile:'9876543999'});
+ const apply=async()=>{await s.run("DELETE FROM solaris_migrations WHERE name='0006_project_back_status.sql'");await migrate(db.client);};
+ await apply();
+ assert.equal((await s.one('SELECT * FROM leads WHERE id=?',leadId)).status,'Project Back');
+ assert.equal((await s.one('SELECT * FROM leads WHERE id=?',freshId)).status,'New');
+ const returned=await s.one('SELECT * FROM leads WHERE id=?',leadId);
+ await s.act(u.SALES,'lead.update',{id:leadId,version:returned.version,note:'Follow-up while keeping Project Back status'});
+ assert.equal((await s.one('SELECT * FROM leads WHERE id=?',leadId)).status,'Project Back');
+ await s.act(u.SALES,'lead.update',{id:leadId,status:'Contacted',note:'Spoke with customer'});
+ await apply();
+ assert.equal((await s.one('SELECT * FROM leads WHERE id=?',leadId)).status,'Contacted');
 });

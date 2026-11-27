@@ -55,3 +55,8 @@ body .enquiry-page{background:radial-gradient(ellipse at 0 0,#ffefd9,transparent
 @media print{.quotation-letterhead{border-color:#ff8500}.quotation-paper{color:#183653}.quotation-paper th{background:#edf4fc}.quotation-totals .quotation-grand-total{border-color:#ff8500;color:#003b91}.quotation-words{background:#fff4e5}}
 /* Keep keyboard focus and small orange links readable on light surfaces. */
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #0073c8;outline-offset:3px}.text-link:hover{color:#b65300}.enquiry-property input:focus-visible+span{outline-color:#0073c8}
+
+/* Returned project customers use a solid yellow status badge. */
+.badge.project-back,.lead-state.project-back{background:#ffd600;color:#332600;border:1px solid #d4ad00;font-weight:700}
+.badge.project-back>span{background:currentColor}
+.lead-state.project-back{padding:6px 9px;border-radius:999px;white-space:nowrap}
