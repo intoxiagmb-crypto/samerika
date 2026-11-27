@@ -1,6 +1,7 @@
 'use client';
 
-import { Fragment, useState } from 'react';
+import ProjectHistory from './project-history';
+import { Fragment, useId, useState } from 'react';
 import { Check, Clock3, LoaderCircle, AlertCircle, Upload } from 'lucide-react';
 import { requiredProjectDocuments, documentationStatus } from '@/lib/documentation.mjs';
 import { installationPhaseLabel } from '@/lib/project-progress.mjs';
@@ -19,6 +20,7 @@ const statuses = ['Pending', 'Processing', 'Completed'];
 const displayStatus = (status: string) => status === 'In Progress' ? 'Processing' : status;
 
 export default function ProjectTimeline({ project, records, requiredDocuments, role, saving, error, onUpdate, onUpload }: Props) {
+  const titleId = useId();
   const [documentType, setDocumentType] = useState(requiredDocuments[0] || 'Other');
   const [notes, setNotes] = useState<Record<string, string>>({});
   const steps = trackingSteps(project.data.tracking);
@@ -92,10 +94,11 @@ export default function ProjectTimeline({ project, records, requiredDocuments, r
       !unlocked && editable && live ? 'Complete the previous installation phase first.' : phase.updatedBy ? `Updated by ${phase.updatedBy}` : undefined);
     return handover ? <Fragment key={`phase-${index}`}>{subsidyRow}{phaseRow}</Fragment> : phaseRow;
   });
-  return <section className="project-timeline" aria-labelledby="project-timeline-title" aria-busy={saving}>
-    <h3 id="project-timeline-title">Installation timeline</h3><p>हर लाइन पर status बदलें — बदलाव अपने आप save होगा।</p>
+  return <section className="project-timeline" aria-labelledby={titleId} aria-busy={saving}>
+    <h3 id={titleId}>Installation timeline</h3><p>हर लाइन पर status बदलें — बदलाव अपने आप save होगा।</p>
     <div className="project-timeline-feedback" role={error ? 'alert' : 'status'}>{error || (saving ? 'Saving…' : 'Pending → Processing → Completed')}</div>
     <ol>{steps.slice(0, 3).map(milestone)}{documents}{milestone(steps[3], 3)}{approvals}{phases}</ol>
+    <ProjectHistory project={project} records={projectRecords}/>
     {manage && live && <button className="button button-secondary" disabled={saving} onClick={() => { void onUpdate('project.update', { ...extra, status: 'Completed' }, 'Project completed'); }}>Complete project</button>}
   </section>;
 }

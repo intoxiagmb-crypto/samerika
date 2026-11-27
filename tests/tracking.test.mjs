@@ -68,3 +68,14 @@ test('status date uses the India calendar at the UTC date boundary', () => {
   const updated = updateApplicationTracking({}, { stepId: 'site_survey', status: 'In Progress', eventDate: '2026-11-23' }, actor, new Date('2026-11-22T19:00:00Z'));
   assert.equal(updated.steps.site_survey.eventDate, '2026-11-23');
 });
+
+test('shared timeline edits preserve retired application records without treating them as active prerequisites',()=>{
+ let tracking={};for(const step of APPLICATION_STEPS)tracking=complete(tracking,step.id);
+ const oldInstallation=structuredClone(tracking.steps.installation);
+ const updated=updateApplicationTracking(tracking,{stepId:'registration',status:'Pending',eventDate:'2026-11-22'},actor,clock,true);
+ assert.equal(updated.steps.registration.status,'Pending');assert.deepEqual(updated.steps.installation,oldInstallation);
+ assert.deepEqual(updated.steps.subsidy_disbursal,tracking.steps.subsidy_disbursal);
+ const finished=updateApplicationTracking(updated,{stepId:'registration',status:'Completed',eventDate:'2026-11-22'},actor,clock,true);
+ assert.equal(finished.steps.registration.status,'Completed');
+ assert.throws(()=>updateApplicationTracking(finished,{stepId:'site_survey',status:'Pending',eventDate:'2026-11-22'},actor,clock,true),/Reset later stages/);
+});

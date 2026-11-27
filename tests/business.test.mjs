@@ -533,3 +533,15 @@ test('project home status follows timeline saves, document reviews and approval 
  p=await get();await s.act(u.MANAGER,'project.update',{id:projectId,version:p.version,phase:6,phaseStatus:'Completed',evidence:'Customer signature'});
  assert.equal((await progress()).label,'Ready to complete');assert.equal((await get()).status,'Installation');
 });
+
+test('retired application installation status cannot block edits to the shared installation timeline',async()=>{
+ const {s,u}=await setup();const {projectId}=await createProject(s,u);
+ let p=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ const legacy={status:'Completed',eventDate:'2026-01-01',reference:'OLD-INSTALLATION',updatedBy:'Previous team'};
+ await s.run('UPDATE projects SET data=? WHERE id=?',JSON.stringify({...p.data,tracking:{workflowVersion:2,steps:{installation:legacy}}}),projectId);
+ await s.act(u.MANAGER,'project.update',{id:projectId,version:p.version,phase:0,phaseStatus:'Processing',evidence:'Current work in progress'});
+ p=await s.one('SELECT * FROM projects WHERE id=?',projectId);
+ assert.equal(p.data.phases[0].status,'Processing');assert.deepEqual(p.data.tracking.steps.installation,legacy);
+ const snapshot=await s.snapshot(u.ADMIN);
+ assert.equal(snapshot.projects.find(project=>project.id===projectId).progress.text,'Site preparation · Processing');
+});
