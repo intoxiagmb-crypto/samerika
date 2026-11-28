@@ -1,4 +1,5 @@
 import Brand from '@/components/brand';
+import ApkEcoLogin from '@/components/apk-eco-login';
 import { portalDestination } from '@/lib/portal-destination';
 import { Users, Building2, BriefcaseBusiness, ArrowRight, ArrowLeft, ShieldCheck } from 'lucide-react';
 
@@ -10,7 +11,7 @@ const portals = [
 
 export default async function LoginChooser({searchParams}:{searchParams:Promise<Record<string,string|string[]|undefined>>}) {
   const next=portalDestination((await searchParams).next);
-  return <main className="portal-choice three-portals">
+  return <><ApkEcoLogin/><main className="portal-choice three-portals web-login-entry">
     <Brand/>
     <div className="choice-heading"><span className="eyebrow">WELCOME TO YOUR SOLAR WORKSPACE</span><h1>One team.<br/>Your own workspace.</h1><p>Choose the login that matches your account.</p></div>
     <div className="choice-grid">{portals.map(({ href, title, label, icon: Icon, description }) => <a key={href} href={next==='/portal'?href:`${href}?next=${encodeURIComponent(next)}`} className="choice-card">
@@ -18,5 +19,5 @@ export default async function LoginChooser({searchParams}:{searchParams:Promise<
     </a>)}</div>
     <p className="choice-note"><ShieldCheck size={16}/> Use the account provided by your company administrator.</p>
     <a href="/" className="text-link"><ArrowLeft size={15}/> Back to website</a>
-  </main>;
+  </main></>;
 }
