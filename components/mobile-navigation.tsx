@@ -12,11 +12,21 @@ const links = [
   { href: '/portal', label: 'Profile', icon: UserRound },
 ];
 
-export default function MobileNavigation() {
+export default function MobileNavigation({ withinDialog = false }: { withinDialog?: boolean }) {
   const pathname = usePathname();
-  if (pathname.startsWith('/portal') || pathname.startsWith('/login') || pathname.startsWith('/quotation') || pathname === '/enquiry') return null;
-  return <nav className="solar-mobile-nav" aria-label="Mobile navigation">{links.map(({ href, label, icon: Icon }) =>
-    <Link key={href} href={href} aria-current={pathname === href ? 'page' : undefined} className={pathname === href ? 'is-current' : ''}>
+  // The root menu stays mounted on every route. Modal routes also render it
+  // inside their focus trap, above the overlay covering the root menu.
+  const isCurrent = (href: string) => href === '/portal'
+    ? pathname.startsWith('/portal') || pathname.startsWith('/login')
+    : pathname === href || (href !== '/' && pathname.startsWith(`${href}/`));
+  return <nav className={`solar-mobile-nav${withinDialog ? ' solar-mobile-nav-dialog' : ''}`} aria-label="Mobile navigation">{links.map(({ href, label, icon: Icon }) =>
+    <Link key={href} href={href} aria-current={isCurrent(href) ? 'page' : undefined} className={isCurrent(href) ? 'is-current' : ''} onClick={event => {
+      // Let an in-flight form finish before leaving its page.
+      if (document.querySelector('form[aria-busy="true"], [data-app-saving="true"]')) { event.preventDefault(); return; }
+      // Workspace views include local drawers/forms. Reload when leaving that
+      // workspace so a same-route Profile click also starts at its main screen.
+      if (pathname.startsWith('/portal')) { event.preventDefault(); window.location.assign(href); }
+    }}>
       <span><Icon size={21} strokeWidth={1.9}/></span><span>{label}</span>
     </Link>
   )}</nav>;

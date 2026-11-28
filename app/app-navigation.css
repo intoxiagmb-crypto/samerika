@@ -1,0 +1,22 @@
+/* Persistent app navigation. Ordinary mobile/desktop browsers keep their UI. */
+html[data-samerika-app="android"]{--app-nav-height:calc(70px + env(safe-area-inset-bottom))}
+html[data-samerika-app="android"] body{padding-bottom:var(--app-nav-height);scroll-padding-bottom:calc(var(--app-nav-height) + 16px)}
+html[data-samerika-app="android"] body .solar-mobile-nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center;position:fixed;bottom:0;left:0;right:0;z-index:70;min-height:var(--app-nav-height);background:#fbfcfff5;border-top:1px solid #dce7fa;box-shadow:0 -6px 28px #17376309;padding:7px 6px calc(8px + env(safe-area-inset-bottom));backdrop-filter:blur(18px);border-radius:22px 22px 0 0}
+html[data-samerika-app="android"] .solar-mobile-nav>a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#425c80;text-decoration:none;min-height:55px;font-size:12px;font-weight:550;line-height:1.2}
+html[data-samerika-app="android"] .solar-mobile-nav>a>span:first-child{display:grid;place-items:center;width:44px;height:29px;border-radius:12px}
+html[data-samerika-app="android"] .solar-mobile-nav>a.is-current{color:#103b71;font-weight:750}
+html[data-samerika-app="android"] .solar-mobile-nav>a.is-current>span:first-child{background:#e4edff}
+html[data-samerika-app="android"] body .mobile-workspace-nav{display:none}
+html[data-samerika-app="android"] body .samerika-home{padding-bottom:24px}
+html[data-samerika-app="android"] .apk-eco-login{min-height:calc(100dvh - var(--app-nav-height))}
+html[data-samerika-app="android"] body .quote-enquiry-sheet{top:auto;bottom:var(--enquiry-viewport-bottom,0px);left:0;transform:none;width:100%;max-height:calc(var(--enquiry-viewport-height,100dvh) - 12px);padding-bottom:calc(var(--app-nav-height) + 24px);scroll-padding-bottom:calc(var(--app-nav-height) + 16px);animation:none}
+html[data-samerika-app="android"] body .quote-enquiry-sheet .solar-mobile-nav-dialog{bottom:var(--enquiry-viewport-bottom,0px);z-index:242;pointer-events:auto}
+@media(max-width:900px){
+  html[data-samerika-app="android"] body .workspace-header>div:first-child{gap:6px;min-width:0}
+  html[data-samerika-app="android"] body .workspace-header .mobile-menu{display:inline-flex;align-items:center;justify-content:center;order:-1;flex:0 0 44px;width:44px;min-height:44px;margin:0}
+  html[data-samerika-app="android"] body .mobile-workspace-brand .brand.brand-link{width:clamp(100px,30vw,182px)}
+}
+@media print{
+  html[data-samerika-app="android"] body{padding-bottom:0!important}
+  html[data-samerika-app="android"] body .solar-mobile-nav{display:none!important}
+}

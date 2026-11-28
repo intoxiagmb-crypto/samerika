@@ -6,6 +6,7 @@ import { Dialog } from 'radix-ui';
 import { X } from 'lucide-react';
 import EnquiryForm, { type EnquiryDefaults } from './enquiry-form';
 import { markEnquiryWelcomeSeen } from '@/lib/enquiry-welcome.mjs';
+import MobileNavigation from '@/components/mobile-navigation';
 
 export default function EnquiryDialog({ intercepted = false, welcome = false, title = 'Get Free Solar Quote', ...defaults }: EnquiryDefaults & { intercepted?: boolean; welcome?: boolean; title?: string }) {
   const router = useRouter();
@@ -41,6 +42,7 @@ export default function EnquiryDialog({ intercepted = false, welcome = false, ti
         <header className="quote-enquiry-heading"><Dialog.Title asChild><h1 ref={heading} tabIndex={-1}>{welcome ? <>Switch to solar<br/><em>with Samerika.</em></> : title}</h1></Dialog.Title><Dialog.Description>{welcome ? 'Book a free consultation and explore solar for your rooftop.' : 'Take the first step towards lower electricity bills with solar.'}</Dialog.Description></header>
         <EnquiryForm {...defaults} consultation={welcome} onDone={close}/>
       </div>
+      <MobileNavigation withinDialog/>
     </Dialog.Content>
   </Dialog.Root>;
 }
