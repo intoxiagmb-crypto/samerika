@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Build and sign the standalone Android shell using Android SDK tools, offline."""
 import hashlib
+import json
 import os
 from pathlib import Path
 import secrets
@@ -46,7 +47,14 @@ paths = "\n".join(f'<path android:fillColor="{colors[p.attrib["fill"]]}" android
 run(TOOLS / "aapt2", "compile", "--dir", SRC / "res", "-o", BUILD / "resources.zip")
 run(TOOLS / "aapt2", "link", "-o", BUILD / "unsigned.apk", "-I", ANDROID,
     "--manifest", SRC / "AndroidManifest.xml", "--java", BUILD / "generated",
-    "-A", SRC / "assets", BUILD / "resources.zip")
+    BUILD / "resources.zip")
+# Embed this small, trusted bridge at build time: no asset disk read on cold start.
+bridge = (SRC / "assets/integration.js").read_text(encoding="utf-8")
+if len(bridge.encode("utf-8")) > 60000:
+    raise SystemExit("Integration bridge is too large for a Java string constant.")
+(BUILD / "generated/IntegrationSource.java").write_text(
+    "package com.samerikapower.app;\nfinal class IntegrationSource {\n"
+    "static final String SCRIPT = " + json.dumps(bridge, ensure_ascii=True) + ";\n}\n")
 sources = sorted((SRC / "java").rglob("*.java")) + sorted((BUILD / "generated").rglob("*.java"))
 run(JAVA / "bin/javac", "--release", "8", "-classpath", ANDROID, "-d", BUILD / "classes", *sources)
 run(JAVA / "bin/jar", "cf", BUILD / "classes.jar", "-C", BUILD / "classes", ".")

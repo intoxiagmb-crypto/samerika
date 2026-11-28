@@ -19,3 +19,7 @@ Includes Android Back, loading/error/retry UI, keyboard/system-bar insets, docum
 Before distribution, test on an Android device: home/enquiry, company/staff/partner login, Back, keyboard/form layout, upload a PDF/image, download a private document, print a quotation, save a CSV, open WhatsApp, and turn network off/on to check Retry. Use a test account for actions that create records. Compilation and signature checks do not replace these device checks.
 
 Android references: [WebView](https://developer.android.com/develop/ui/views/layout/webapps/webview), [command-line packaging and signing](https://developer.android.com/build/building-cmdline), [signature verification](https://developer.android.com/tools/apksigner).
+
+Release 1.0.1 (versionCode 2) embeds the bridge during compilation, moves cookie persistence and CSV decoding off the UI thread, and cleans up popup WebViews. Renderer termination uses the existing error/retry screen. The release uses the same signing certificate as 1.0.0, so install it as an update to receive the native changes. The UI, permissions and trusted origins are unchanged.
+
+See `docs/apk-performance-report.txt` for measured local comparisons, verification coverage and remaining device checks. `node scripts/benchmark-performance.mjs 5379602` reproduces the synthetic CPU/SQLite comparison; it does not measure Android startup or memory. Migration `0007_read_path_indexes.sql` must be applied to the live database separately in an authorized environment with the database connection configured.

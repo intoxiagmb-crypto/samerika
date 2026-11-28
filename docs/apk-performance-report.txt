@@ -1,0 +1,76 @@
+SAMERIKA POWER — APK PERFORMANCE REPORT
+Release 1.0.1 / versionCode 2 • 29 November 2026 (Asia/Kolkata)
+Baseline source: 5379602
+
+STATUS
+Signed release artifact built, compiler/type checks and local automated tests passed.
+Physical Android installation and runtime verification remain NOT PERFORMED: the user confirmed no device is available. Browser visual verification also could not run because the browser access host was unavailable. This is not a certification that all devices/features are production-verified.
+
+The APK is a small Android WebView shell loading https://www.samerikapower.com/.
+Native changes require installing this new APK. Hosted navigation/server changes arrive through the normal GitHub/Vercel deployment. Database index migration 0007 is prepared and locally verified, but NOT APPLIED or verified against the live database: no production database connection is available in this workspace.
+
+SCOPE AND FINDINGS
+Reviewed native startup/lifecycle, export/download/print handling, WebView trust and cookies, APK packaging, client navigation, dashboard rendering, server snapshot processing, database read paths, authentication/caching configuration, and existing regression tests. No native RecyclerView, Room database, image library or custom Application startup initializer exists in this architecture.
+
+IMPLEMENTED CHANGES
+1. Native startup: embed the existing 1,406-byte JavaScript integration bridge into the DEX at build time. Removes startup asset I/O, temporary input buffer and duplicate packaged bridge asset. Bridge contents/behavior are preserved.
+2. Cookie persistence: run the same flush operation on a serial background executor instead of blocking onPageFinished/onPause on the main UI thread. Cookie access policies, HTTPS-only navigation, HttpOnly sessions and certificate validation remain intact.
+3. CSV exports: move JSON/base64 processing off the UI thread; serialize export work and reject overlapping exports while decode/save is in progress. Enforce the existing 8 MB limit on the native side as well. Keep Android's document picker and save behavior.
+4. WebView lifecycle: track/dispose temporary popup WebViews, detach views before destruction, clear upload/export references and shut down the export worker. Handle renderer termination using the existing error/retry screen instead of the platform's default host-process failure behavior. Guard delayed print/page callbacks against a destroyed view. These are code-level fixes; device memory/crash rates were not measured.
+5. APK bottom navigation: use client-side route transitions rather than a full document reload when leaving the workspace. Clicking Profile resets workspace state using the existing history restoration path; busy writes still prevent navigation. No menu labels/layout changes.
+6. Dashboard rendering: reuse currency/date formatters rather than constructing Intl formatters for each table cell. Keep locale, output and invalid-date handling.
+7. Snapshot CPU: group projects by lead before applying the unchanged access predicate. Project-dependent roles avoid repeated whole-project scans. Deleted project history remains available to the policy; full output parity was checked for eight roles across Active/Pending/Suspended statuses. Roles resolved from lead fields alone keep their original fast path.
+8. Database read paths: migration 0007 adds notifications(user_id, created_at) and projects(lead_id) indexes. The notification feed no longer needs a full scan plus temporary sort; the project lookup index also covers deleted history, which the existing partial unique index does not. No record/schema-column changes or permission changes.
+9. Regression test repair: the three pre-existing file-preview test failures used the obsolete getPortalIdentity mock. They now mock the actual getPortalUser dependency, retaining real role/access checks. This was a test harness defect, not an observed production login defect.
+
+MEASURED BEFORE / AFTER
+Environment: v22.15.0, darwin/arm64; local synthetic data. These values are NOT Android cold/warm launch, RAM, frame-rate, internet or production API benchmarks.
+Snapshot fixture: 5,000 leads, 5,000 projects and 15,000 records; warmed median of nine alternating before/after runs, excluding database/network I/O. All 24 full role/status outputs matched the baseline. Small differences between runs (especially Admin) are timing noise; do not extrapolate this to every API or device.
+  FINANCE snapshot CPU: 102.23 ms -> 17.80 ms (82.6% lower in this run)
+  TECHNICAL snapshot CPU: 165.53 ms -> 12.08 ms (92.7% lower in this run)
+  ADMIN snapshot CPU: 16.88 ms -> 16.28 ms (3.6% lower in this run)
+  Currency formatting (1,000 amounts): 17.01 ms -> 0.31 ms
+  SQLite notifications (50,000 rows, latest 50, median 20 reads): 10.95 ms -> 0.17 ms
+  Notification query plan: SCAN + TEMP B-TREE -> SEARCH USING notifications_user_created_idx
+  Signed APK size: 25,197 -> 25,130 bytes (67 bytes smaller; not a material size improvement)
+  Native bridge asset reads during onCreate: one -> zero (source/build inspection)
+  Explicit cookie flushes on main thread: moved to worker (source inspection; time not measured)
+  Android cold/warm startup, PSS/RAM, jank and battery: NOT MEASURED
+
+VERIFICATION COMPLETED
+- npm test: 120/120 pass (baseline: 112/115; three obsolete mocks corrected, five regression cases added).
+- node --test android/integration.test.mjs: 4/4 pass (CSV bridge, repeat installation, normal links/print, oversize behavior).
+- Production Next.js build and TypeScript checks: pass.
+- Local HTTP smoke workflow on an isolated production build and synthetic local database: pass. Includes public/protected pages, company/staff/partner/customer login, invalid password/portal and CSRF rejection, authorization isolation, enquiry/project/quotation workflows, stale-write rejection, private uploads/downloads, invalid file rejection, logout and session revocation. No production credentials or business records used.
+- New index query plans verified with real local SQLite; migrations re-run safely.
+- Android SDK 36/JDK 17 compile, D8 release packaging, zip integrity, zipalign and APK signature verification: pass.
+- Existing and new signing certificate SHA-256 match: 1910cec63102b7a9b895e2bf381e1efc8d1bc18ec64a18aa8426f881bdb00cdd
+- Android manifest: package com.samerikapower.app; version 1.0.1 (2); minimum API 29 (Android 10); target API 36; not debuggable; only INTERNET permission; cleartext/backup disabled as before.
+- Release SHA-256: 82b3fe4d16e26d33b90b22ceb17bc8060a263e7fdc64f6b6bd656ac8823ef782
+
+DECISIONS / LIMITS
+WebView's HTTP cache and Next image/static-asset optimization remain in use. No cache-first override, shared authenticated response cache, offline business writes, weakened password hashing or artificial loading delay was introduced. Auth/private documents retain no-store and server authorization. Existing asynchronous login hashing, database read batching, lazy quotation editor and hidden-page banner suspension were already present.
+No image/branding/layout redesign, extra native dependencies, largeHeap, forced garbage collection or animation removal. D8 release mode retained: the native APK is already about 25 KB with no third-party runtime libraries; adding R8 rules without device coverage for negligible size gain was not justified. The shell still needs a network connection; these changes do not remove server/network latency.
+
+DEPLOYMENT AND DEVICE FOLLOW-UP
+- Deploy the committed hosted source using the existing GitHub/Vercel pipeline.
+- In an authorized environment with TURSO_DATABASE_URL and TURSO_AUTH_TOKEN already configured, run: npm run db:migrate. Verify migration 0007 before claiming the live index gains. Never paste tokens into chat or commit environment files.
+- Transfer outputs/android/Samerika-Power.apk to Android 10+ and update the existing app (same signer, higher versionCode). Do not uninstall merely to update.
+- Device checks still required: install/update, existing session retention and login/logout, Home/Projects/Calculator/Support/Profile and Android Back, keyboard/insets/scrolling, enquiry, PDF/image upload, private download, CSV save/cancel, A4 printing, WhatsApp/external links, offline/retry, background/resume, renderer recovery and sustained navigation.
+- For before/after Android timing and memory, use the saved baseline APK on the same device, WebView version, network and account; repeat cold/warm launches and record adb shell am start -W, dumpsys meminfo and frame metrics. Do not treat native Activity launch time as web content readiness.
+
+REPRODUCE
+  node scripts/benchmark-performance.mjs 5379602
+  npm test
+  node --test android/integration.test.mjs
+  npm run build
+  python3 android/build.py
+Raw results: docs/performance-measurements.json. Local logs and APK verification metadata: outputs/performance/. Local fixture accounts and signing secrets are ignored and excluded from the source deliverable.
+
+PRIMARY REFERENCES
+CookieManager.flush can block and perform I/O:
+https://developer.android.com/reference/android/webkit/CookieManager#flush()
+WebView destruction and callback requirements:
+https://developer.android.com/reference/android/webkit/WebView
+Renderer termination recovery:
+https://developer.android.com/develop/ui/views/layout/webapps/managing-webview

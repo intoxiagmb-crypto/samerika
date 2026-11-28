@@ -1,0 +1,51 @@
+{
+  "baseline": "5379602",
+  "node": "v22.15.0",
+  "platform": "darwin",
+  "arch": "arm64",
+  "scope": "Synthetic local measurements; not Android startup, RAM, frame rate, network latency or production API timing.",
+  "fixture": {
+    "leads": 5000,
+    "projects": 5000,
+    "records": 15000,
+    "roleStatusParityCases": 24
+  },
+  "snapshot": {
+    "FINANCE": {
+      "beforeMedianMs": 102.2272089999999,
+      "afterMedianMs": 17.79754099999991,
+      "reductionPercent": 82.5902113790469,
+      "rounds": 9
+    },
+    "TECHNICAL": {
+      "beforeMedianMs": 165.53045900000006,
+      "afterMedianMs": 12.082542000000103,
+      "reductionPercent": 92.70071377014662,
+      "rounds": 9
+    },
+    "ADMIN": {
+      "beforeMedianMs": 16.88208399999985,
+      "afterMedianMs": 16.279625000000124,
+      "reductionPercent": 3.5686293232502067,
+      "rounds": 9
+    }
+  },
+  "currency": {
+    "beforeMedianMs": 17.013833999999406,
+    "afterMedianMs": 0.3123750000004293,
+    "reductionPercent": 98.16399407681749,
+    "rounds": 9
+  },
+  "notifications": {
+    "rows": 50000,
+    "beforePlan": [
+      "SCAN notifications",
+      "USE TEMP B-TREE FOR ORDER BY"
+    ],
+    "afterPlan": [
+      "SEARCH notifications USING INDEX notifications_user_created_idx (user_id=?)"
+    ],
+    "beforeMedianMs": 10.94812499999989,
+    "afterMedianMs": 0.16737499999999272
+  }
+}

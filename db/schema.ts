@@ -14,7 +14,7 @@ export const projects = sqliteTable('projects', {
  id: text('id').primaryKey(), leadId: text('lead_id').notNull().references(()=>leads.id),
  managerId: text('manager_id').references(()=>users.id), technicianId: text('technician_id').references(()=>users.id), verifierId: text('verifier_id').references(()=>users.id),
  status: text('status').notNull(), data: text('data').notNull(), createdAt: text('created_at').notNull(), updatedAt: text('updated_at').notNull(), version: integer('version').notNull().default(1),
-}, t=>[uniqueIndex('projects_lead_id_unique').on(t.leadId).where(sql`json_extract(${t.data}, '$.deletedAt') IS NULL`)]);
+}, t=>[uniqueIndex('projects_lead_id_unique').on(t.leadId).where(sql`json_extract(${t.data}, '$.deletedAt') IS NULL`),index('projects_lead_history_idx').on(t.leadId)]);
 export const records = sqliteTable('records', {
  id: text('id').primaryKey(), kind: text('kind').notNull(), projectId: text('project_id').references(()=>projects.id), ownerId: text('owner_id').notNull().references(()=>users.id),
  status: text('status').notNull(), amount: integer('amount').notNull().default(0), reference: text('reference'), data: text('data').notNull(),
@@ -26,7 +26,7 @@ export const audit = sqliteTable('audit', {
 },t=>[index('audit_entity_idx').on(t.entityId)]);
 export const notifications = sqliteTable('notifications', {
  id: text('id').primaryKey(), userId: text('user_id').notNull().references(()=>users.id), message: text('message').notNull(), entityId: text('entity_id').notNull(), read: integer('read').notNull().default(0), createdAt: text('created_at').notNull(),
-});
+},t=>[index('notifications_user_created_idx').on(t.userId,t.createdAt)]);
 export const settings = sqliteTable('settings', { key: text('key').primaryKey(), data: text('data').notNull() });
 export const requestLimits = sqliteTable('request_limits', { key: text('key').primaryKey(), count: integer('count').notNull(), expiresAt: integer('expires_at').notNull() });
 

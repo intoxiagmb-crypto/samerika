@@ -26,7 +26,7 @@ async function setup(t){
   '@/lib/request-body':{readLimitedBody:()=>{throw new Error('Unexpected upload');}},
   '@/lib/database.mjs':{getDatabase:()=>db},
   '@/lib/storage.mjs':{createStorage:()=>({get:async key=>{reads++;assert.equal(key,'private-test-key');return stored?bytes:null;}})},
-  '@/lib/portal-auth':{getPortalIdentity:async()=>identity},
+  '@/lib/portal-auth':{getPortalUser:async()=>identity?service.one('SELECT * FROM users WHERE id=?',identity.userId):null},
   '@/lib/business.mjs':{Business,errorResponse},
  };
  const loaded={exports:{}};

@@ -14,24 +14,32 @@ import android.print.PrintManager;
 import android.util.Base64;
 import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowInsets;
 import android.webkit.*;
 import android.widget.*;
 import org.json.JSONObject;
-import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public final class MainActivity extends Activity {
     private static final String HOME = "https://www.samerikapower.com/";
     private static final int PICK_FILE = 101, SAVE_FILE = 102;
+    // Cookie persistence can perform blocking disk I/O. It never owns an Activity.
+    private static final ExecutorService COOKIE_IO = Executors.newSingleThreadExecutor();
+    private final ExecutorService exportIo = Executors.newSingleThreadExecutor();
+    private final Set<WebView> popups = new HashSet<>();
     private WebView web;
     private ProgressBar progress;
     private LinearLayout error;
     private ValueCallback<Uri[]> upload;
     private byte[] pendingSave;
+    private boolean exportBusy;
+    private boolean rendererGone;
     private String retryUrl = HOME;
-    private String integration = "";
 
     static boolean trusted(String url) {
         if (url == null) return false;
@@ -44,13 +52,6 @@ public final class MainActivity extends Activity {
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
-        try (InputStream input = getAssets().open("integration.js")) {
-            java.io.ByteArrayOutputStream buffer = new java.io.ByteArrayOutputStream();
-            byte[] chunk = new byte[4096];
-            int count;
-            while ((count = input.read(chunk)) != -1) buffer.write(chunk, 0, count);
-            integration = buffer.toString(StandardCharsets.UTF_8.name());
-        } catch (Exception ignored) { }
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(Color.WHITE);
@@ -81,7 +82,7 @@ public final class MainActivity extends Activity {
         error.addView(message);
         Button retry = new Button(this);
         retry.setText("Try again");
-        retry.setOnClickListener(v -> web.loadUrl(retryUrl));
+        retry.setOnClickListener(v -> { if (rendererGone) recreate(); else web.loadUrl(retryUrl); });
         error.addView(retry);
         content.addView(error, new FrameLayout.LayoutParams(-1, -1));
         error.setVisibility(View.GONE);
@@ -108,15 +109,24 @@ public final class MainActivity extends Activity {
                 progress.setVisibility(View.VISIBLE);
             }
             @Override public void onPageFinished(WebView view, String url) {
+                if (view != web || isDestroyed()) return;
                 progress.setVisibility(View.GONE);
-                CookieManager.getInstance().flush();
-                if (trusted(url)) web.evaluateJavascript(integration, null);
+                flushCookies();
+                if (trusted(url)) view.evaluateJavascript(IntegrationSource.SCRIPT, null);
             }
             @Override public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError failure) {
                 if (request.isForMainFrame()) showError();
             }
             @Override public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse response) {
                 if (request.isForMainFrame() && response.getStatusCode() >= 500) showError();
+            }
+            @Override public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
+                rendererGone = true;
+                if (upload != null) { upload.onReceiveValue(null); upload = null; }
+                releaseWebView(view);
+                web = null;
+                showError();
+                return true;
             }
             // Keep the platform's default SSL-error cancellation.
         });
@@ -133,12 +143,25 @@ public final class MainActivity extends Activity {
             @Override public boolean onCreateWindow(WebView view, boolean dialog, boolean gesture, android.os.Message message) {
                 if (!gesture) return false;
                 WebView popup = new WebView(MainActivity.this);
+                popups.add(popup);
                 popup.setWebViewClient(new WebViewClient() {
                     @Override public boolean shouldOverrideUrlLoading(WebView child, WebResourceRequest request) {
                         String url = request.getUrl().toString();
-                        if (!route(url)) web.loadUrl(url);
-                        child.destroy();
+                        if (!route(url) && web != null) web.loadUrl(url);
+                        popups.remove(child);
+                        releaseWebView(child);
                         return true;
+                    }
+                    @Override public boolean onRenderProcessGone(WebView child, RenderProcessGoneDetail detail) {
+                        popups.remove(child);
+                        releaseWebView(child);
+                        return true;
+                    }
+                });
+                popup.setWebChromeClient(new WebChromeClient() {
+                    @Override public void onCloseWindow(WebView child) {
+                        popups.remove(child);
+                        releaseWebView(child);
                     }
                 });
                 ((WebView.WebViewTransport) message.obj).setWebView(popup);
@@ -149,22 +172,17 @@ public final class MainActivity extends Activity {
                 if (!trusted(url) || !trusted(view.getUrl())) return false;
                 if ("samerika:print".equals(message)) {
                     result.confirm("");
-                    view.post(() -> ((PrintManager)getSystemService(PRINT_SERVICE)).print("Samerika quotation",
-                        web.createPrintDocumentAdapter("Samerika quotation"),
-                        new PrintAttributes.Builder().setMediaSize(PrintAttributes.MediaSize.ISO_A4).build()));
+                    view.post(() -> {
+                        if (isDestroyed() || view != web) return;
+                        ((PrintManager)getSystemService(PRINT_SERVICE)).print("Samerika quotation",
+                            view.createPrintDocumentAdapter("Samerika quotation"),
+                            new PrintAttributes.Builder().setMediaSize(PrintAttributes.MediaSize.ISO_A4).build());
+                    });
                     return true;
                 }
                 if ("samerika:save".equals(message)) {
                     result.confirm("");
-                    if (pendingSave != null) { toast("Finish saving the current export first."); return true; }
-                    try {
-                        if (value == null || value.length() > 12 * 1024 * 1024) throw new IllegalArgumentException();
-                        JSONObject data = new JSONObject(value);
-                        pendingSave = Base64.decode(data.getString("data"), Base64.DEFAULT);
-                        Intent save = new Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE)
-                            .setType("text/csv").putExtra(Intent.EXTRA_TITLE, safeName(data.optString("name", "samerika-export.csv")));
-                        startActivityForResult(save, SAVE_FILE);
-                    } catch (Exception e) { pendingSave = null; toast("Unable to save this export."); }
+                    prepareExport(value);
                     return true;
                 }
                 return false;
@@ -172,7 +190,46 @@ public final class MainActivity extends Activity {
         });
         web.setDownloadListener((url, agent, disposition, mime, size) -> download(url, disposition, mime));
         if (Build.VERSION.SDK_INT >= 33) getOnBackInvokedDispatcher().registerOnBackInvokedCallback(0, this::goBack);
-        if (state == null || web.restoreState(state) == null) web.loadUrl(HOME);
+        if (state != null && trusted(state.getString("retryUrl"))) retryUrl = state.getString("retryUrl");
+        if (state == null || web.restoreState(state) == null) web.loadUrl(retryUrl);
+    }
+
+    private static void flushCookies() {
+        CookieManager cookies = CookieManager.getInstance();
+        COOKIE_IO.execute(cookies::flush);
+    }
+
+    private void prepareExport(String value) {
+        if (exportBusy) { toast("Finish saving the current export first."); return; }
+        if (value == null || value.length() > 12 * 1024 * 1024) { toast("Unable to save this export."); return; }
+        exportBusy = true;
+        exportIo.execute(() -> {
+            try {
+                JSONObject data = new JSONObject(value);
+                byte[] bytes = Base64.decode(data.getString("data"), Base64.DEFAULT);
+                if (bytes.length > 8 * 1024 * 1024) throw new IllegalArgumentException();
+                String name = safeName(data.optString("name", "samerika-export.csv"));
+                runOnUiThread(() -> {
+                    if (isDestroyed() || isFinishing()) return;
+                    try {
+                        pendingSave = bytes;
+                        Intent save = new Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE)
+                            .setType("text/csv").putExtra(Intent.EXTRA_TITLE, name);
+                        startActivityForResult(save, SAVE_FILE);
+                    } catch (Exception e) { pendingSave = null; exportBusy = false; toast("Unable to save this export."); }
+                });
+            } catch (Exception e) {
+                runOnUiThread(() -> { if (!isDestroyed()) { exportBusy = false; toast("Unable to save this export."); } });
+            }
+        });
+    }
+
+    private static void releaseWebView(WebView view) {
+        if (view.getParent() instanceof ViewGroup) ((ViewGroup)view.getParent()).removeView(view);
+        view.setDownloadListener(null);
+        view.setWebChromeClient(null);
+        view.setWebViewClient(new WebViewClient());
+        view.destroy();
     }
 
     private boolean route(String url) {
@@ -210,9 +267,9 @@ public final class MainActivity extends Activity {
     }
     private void showError() { error.setVisibility(View.VISIBLE); progress.setVisibility(View.GONE); }
     private void toast(String message) { Toast.makeText(this, message, Toast.LENGTH_LONG).show(); }
-    private void goBack() { if (web.canGoBack()) web.goBack(); else finish(); }
+    private void goBack() { if (web != null && web.canGoBack()) web.goBack(); else finish(); }
     @Override public void onBackPressed() { goBack(); }
-    @Override protected void onSaveInstanceState(Bundle state) { web.saveState(state); super.onSaveInstanceState(state); }
+    @Override protected void onSaveInstanceState(Bundle state) { if (web != null) web.saveState(state); state.putString("retryUrl", retryUrl); super.onSaveInstanceState(state); }
     @Override protected void onActivityResult(int code, int result, Intent data) {
         super.onActivityResult(code, result, data);
         if (code == PICK_FILE && upload != null) {
@@ -224,21 +281,25 @@ public final class MainActivity extends Activity {
             pendingSave = null;
             if (result == RESULT_OK && data != null && data.getData() != null && bytes != null) {
                 Uri destination = data.getData();
-                new Thread(() -> {
+                exportIo.execute(() -> {
                     try (OutputStream out = getContentResolver().openOutputStream(destination)) {
                         if (out == null) throw new java.io.IOException();
                         out.write(bytes);
-                        runOnUiThread(() -> toast("Export saved."));
-                    } catch (Exception e) { runOnUiThread(() -> toast("Export could not be saved.")); }
-                }).start();
-            }
+                        runOnUiThread(() -> { exportBusy = false; if (!isDestroyed()) toast("Export saved."); });
+                    } catch (Exception e) { runOnUiThread(() -> { exportBusy = false; if (!isDestroyed()) toast("Export could not be saved."); }); }
+                });
+            } else exportBusy = false;
         }
     }
-    @Override protected void onPause() { CookieManager.getInstance().flush(); web.onPause(); super.onPause(); }
+    @Override protected void onPause() { flushCookies(); if (web != null) web.onPause(); super.onPause(); }
     @Override protected void onResume() { super.onResume(); if (web != null) web.onResume(); }
     @Override protected void onDestroy() {
-        if (upload != null) upload.onReceiveValue(null);
-        if (web != null) web.destroy();
+        if (upload != null) { upload.onReceiveValue(null); upload = null; }
+        pendingSave = null;
+        exportIo.shutdown();
+        for (WebView popup : popups) releaseWebView(popup);
+        popups.clear();
+        if (web != null) { releaseWebView(web); web = null; }
         super.onDestroy();
     }
 }

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const origin=process.env.SOLARIS_TEST_ORIGIN||'http://127.0.0.1:5175';
 assert(['127.0.0.1','localhost'].includes(new URL(origin).hostname),'Smoke tests are restricted to local development.');
-const credentials=JSON.parse(readFileSync(new URL('../.solaris/demo-credentials.json',import.meta.url),'utf8'));
+const credentials=JSON.parse(readFileSync(process.env.SOLARIS_TEST_CREDENTIALS||new URL('../.solaris/demo-credentials.json',import.meta.url),'utf8'));
 const home=await fetch(origin);assert.equal(home.status,200);assert.match(await home.text(),/A brighter future/);
 for(const path of ['/login','/login/agent','/login/company','/login/staff','/login/customer','/enquiry'])assert.equal((await fetch(origin+path)).status,200);
 const plannedEnquiry=await fetch(origin+'/enquiry?property=Commercial&pin=302001&monthlyBill=4500');assert.equal(plannedEnquiry.status,200);const plannedMarkup=await plannedEnquiry.text();assert.match(plannedMarkup,/value="302001"/);assert.match(plannedMarkup,/4,500/);assert.match(plannedMarkup,/name="property" value="Commercial"/);

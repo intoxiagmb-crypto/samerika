@@ -23,9 +23,14 @@ export default function MobileNavigation({ withinDialog = false }: { withinDialo
     <Link key={href} href={href} aria-current={isCurrent(href) ? 'page' : undefined} className={isCurrent(href) ? 'is-current' : ''} onClick={event => {
       // Let an in-flight form finish before leaving its page.
       if (document.querySelector('form[aria-busy="true"], [data-app-saving="true"]')) { event.preventDefault(); return; }
-      // Workspace views include local drawers/forms. Reload when leaving that
-      // workspace so a same-route Profile click also starts at its main screen.
-      if (pathname.startsWith('/portal')) { event.preventDefault(); window.location.assign(href); }
+      // Reset the local workspace without reloading the document and its API data.
+      // Other destinations use Link's normal client navigation.
+      if (pathname === '/portal' && href === '/portal') {
+        event.preventDefault();
+        window.history.pushState(null, '', href);
+        window.dispatchEvent(new PopStateEvent('popstate'));
+        window.scrollTo({top:0,behavior:'auto'});
+      }
     }}>
       <span><Icon size={21} strokeWidth={1.9}/></span><span>{label}</span>
     </Link>
