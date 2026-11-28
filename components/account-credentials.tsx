@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Copy, Eye, EyeOff, RefreshCw, X } from 'lucide-react';
 import { accountCredentialText, accountLoginPath, generateAccountPassword } from '@/lib/account-access.mjs';
+import { copyText } from '@/lib/clipboard.mjs';
 
 export type AccountCredentials = { name: string; email: string; role: string; password: string };
 
@@ -31,7 +32,7 @@ export function AccountCredentialsDialog({ account, onClose }: { account: Accoun
   useEffect(() => { close.current?.focus(); }, []);
   async function copy() {
     try {
-      await navigator.clipboard.writeText(accountCredentialText(account, window.location.origin));
+      await copyText(accountCredentialText(account, window.location.origin));
       setMessage('Credentials copied. Share privately with this account holder.');
     } catch { setMessage('Clipboard unavailable. Use Show password and copy the details manually.'); }
   }
