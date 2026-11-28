@@ -5,14 +5,14 @@ import Image from 'next/image';
 import { Dialog } from 'radix-ui';
 import { X } from 'lucide-react';
 import EnquiryForm, { type EnquiryDefaults } from './enquiry-form';
-import { ENQUIRY_WELCOME_KEY } from '@/lib/enquiry-welcome.mjs';
+import { markEnquiryWelcomeSeen } from '@/lib/enquiry-welcome.mjs';
 
 export default function EnquiryDialog({ intercepted = false, welcome = false, title = 'Get Free Solar Quote', ...defaults }: EnquiryDefaults & { intercepted?: boolean; welcome?: boolean; title?: string }) {
   const router = useRouter();
   const heading = useRef<HTMLHeadingElement>(null);
   const sheet = useRef<HTMLDivElement>(null);
   const close = () => intercepted ? router.back() : router.replace('/', { scroll: false });
-  useEffect(() => { try { window.sessionStorage.setItem(ENQUIRY_WELCOME_KEY, '1'); } catch { /* The form also works when browser storage is disabled. */ } }, []);
+  useEffect(() => { try { markEnquiryWelcomeSeen(window.sessionStorage); } catch { markEnquiryWelcomeSeen(undefined); } }, []);
   useEffect(() => {
     const viewport = window.visualViewport;
     if (!viewport) return;

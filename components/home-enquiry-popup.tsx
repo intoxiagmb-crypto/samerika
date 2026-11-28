@@ -1,9 +1,7 @@
 'use client';
 import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { claimEnquiryWelcome } from '@/lib/enquiry-welcome.mjs';
-
-let shownWithoutStorage = false;
+import { claimEnquiryWelcome, ENQUIRY_WELCOME_DELAY_MS } from '@/lib/enquiry-welcome.mjs';
 
 export default function HomeEnquiryPopup() {
   const pathname = usePathname();
@@ -13,9 +11,9 @@ export default function HomeEnquiryPopup() {
     const timer = window.setTimeout(() => {
       let show = false;
       try { show = claimEnquiryWelcome(window.sessionStorage); }
-      catch { show = !shownWithoutStorage; shownWithoutStorage = true; }
+      catch { show = claimEnquiryWelcome(undefined); }
       if (show) router.push('/enquiry?welcome=1', { scroll: false });
-    }, 0);
+    }, ENQUIRY_WELCOME_DELAY_MS);
     return () => window.clearTimeout(timer);
   }, [pathname, router]);
   return null;
