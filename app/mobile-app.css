@@ -1,0 +1,236 @@
+/* Shared app surfaces: the website and Android WebView use the same UI. */
+.mobile-home-panel,.solar-mobile-nav,.mobile-login-brand,.sh-mobile-notifications,.sh-mobile-nav-link{display:none}
+body .sh-navigation>.sh-mobile-nav-link{display:none}
+.app-public-page{background:#f5f8ff;color:#102b58;min-height:100dvh}
+.app-page{max-width:600px;margin:0 auto;padding:32px 24px 64px}
+.app-page-heading{margin-bottom:28px;text-align:center}
+.app-page-heading>div{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;gap:8px}
+.app-page-heading a{display:grid;place-items:center;min-height:44px;color:#102b58;border-radius:50%}
+.app-page-heading h1{font-size:25px;line-height:1.2;letter-spacing:-.7px;margin:0;font-weight:750}
+.app-page-heading>p{font-size:16px;line-height:1.55;max-width:360px;margin:10px auto 0;color:#526481}
+.app-button{display:inline-flex;align-items:center;justify-content:center;gap:9px;background:#123c69;color:white;border:1px solid transparent;border-radius:15px;min-height:48px;padding:12px 20px;font:inherit;font-size:16px;font-weight:700;text-align:center;text-decoration:none;cursor:pointer;line-height:1.35}
+.app-button:hover{filter:brightness(.95)}
+.app-button-orange{background:#ffac05;color:#102b58}
+.app-button-full{width:100%;margin-top:16px}
+.app-button-outline{background:white;color:#123c69;border-color:#8ca4cd}
+.app-footnote{font-size:13px;line-height:1.65;color:#536780;text-align:center;margin:22px 0 0}
+.app-footnote svg{vertical-align:middle;margin-right:4px}
+.app-services{display:grid;gap:14px}
+.app-service-card{display:flex;gap:17px;align-items:center;padding:10px;border:1px solid #dde7fa;border-radius:18px;background:white;text-decoration:none;box-shadow:0 5px 16px #123c6905}
+.app-service-photo{position:relative;flex:0 0 100px;height:112px;border-radius:12px;overflow:hidden}
+.app-service-photo img{object-fit:cover}
+.app-service-card h2,.app-contact-options h2{font-size:18px;line-height:1.3;letter-spacing:-.3px;margin:0 0 6px;color:#102b58}
+.app-service-card p{font-size:16px;line-height:1.4;margin:0;color:#526481}
+.app-service-card span{display:block;color:#174b84;font-size:14px;font-weight:650;margin-top:10px}
+.app-expert-card,.app-contact-hero{position:relative;overflow:hidden;border-radius:20px;margin-top:24px;isolation:isolate}
+.app-expert-card>img,.app-contact-hero>img{object-fit:cover;z-index:-2}
+.app-expert-card:before,.app-contact-hero:before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,#05284bf5,#05284b88 65%,#05284b18);z-index:-1}
+.app-expert-card>div,.app-contact-hero>div{padding:28px 24px;color:white}
+.app-expert-card h2,.app-contact-hero h2{font-size:27px;line-height:1.2;letter-spacing:-.6px;margin:12px 0 20px;color:white}
+.app-expert-card .app-button{background:white;color:#102b58}
+.app-contact-hero{min-height:220px;margin-top:0}
+.app-contact-hero p{font-size:16px;color:#e7f0fd;margin:0}
+.app-contact-options{display:grid;gap:14px;margin:24px 0 8px}
+.app-contact-options>a{display:flex;gap:16px;align-items:flex-start;border:1px solid #dde7fa;background:#fff;border-radius:16px;padding:18px;color:#123c69;text-decoration:none}
+.app-contact-options>a>span{display:grid;place-items:center;flex:0 0 42px;height:42px;border-radius:14px;background:#fff5df;color:#a85f00}
+.app-contact-options p{margin:0;color:#526481;font-size:16px;line-height:1.5}
+.app-segmented{display:flex;border:0;padding:0;margin:0 0 24px;gap:10px;min-width:0}
+.app-segmented label{flex:1;position:relative;cursor:pointer}
+.app-segmented input{position:absolute;opacity:0}
+.app-segmented span{display:block;border:1px solid #dce7fc;padding:12px 8px;border-radius:30px;background:#fff;font-size:16px;font-weight:650;text-align:center;color:#163762}
+.app-segmented input:checked+span{background:#123c69;border-color:#123c69;color:#fff}
+.app-segmented input:focus-visible+span{outline:3px solid #ffac05;outline-offset:3px}
+.app-form-field{display:block;margin-bottom:18px}
+.app-form-field>span{display:flex;align-items:baseline;justify-content:space-between;font-size:16px;font-weight:650;margin-bottom:8px;gap:10px;color:#102b58}
+.app-form-field small{font-size:14px;color:#526481;font-weight:400}
+.app-form-field input{width:100%;min-height:56px;border:1px solid #d8e4fa;border-radius:14px;padding:12px 16px;font:inherit;font-size:18px;font-weight:600;background:#fff;color:#123c69}
+.app-form-field>small{display:block;margin-top:6px;line-height:1.5}
+.app-assumptions{font-size:14px;color:#526481;border-bottom:1px solid #dce7fa;padding:6px 0 16px;line-height:1.6}
+.app-assumptions summary{cursor:pointer;font-weight:650;min-height:34px;color:#244a7d}
+.app-assumptions .app-form-field{margin-top:16px}
+.app-assumptions a{text-decoration:underline;color:#174b84}
+.app-calculator-photo{position:relative;isolation:isolate;overflow:hidden;height:185px;margin-top:24px;border-radius:18px}
+.app-calculator-photo img{object-fit:cover;z-index:-2}
+.app-calculator-photo:before{content:'';position:absolute;inset:0;background:linear-gradient(transparent,#072444b8);z-index:-1}
+.app-calculator-photo>span{position:absolute;bottom:16px;left:18px;color:#fff;display:flex;align-items:center;gap:8px;font-size:14px}
+.app-calculator-result{text-align:center;padding:8px 0}
+.app-success-icon{display:grid;place-items:center;width:66px;height:66px;border-radius:50%;background:#1fa65d;color:white;outline:1px solid #1fa65d;outline-offset:4px;margin:8px auto 25px}
+.app-calculator-result h2{font-size:23px;margin:0 0 10px;line-height:1.3;scroll-margin-top:100px}
+.app-calculator-result>p{font-size:16px;color:#526481;margin-bottom:8px}
+.app-result-value{font-size:45px;letter-spacing:-1.5px;color:#102b58}
+.app-result-value>span{font-size:26px}
+.app-result-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:24px 0}
+.app-result-grid article{padding:18px 10px;background:#eaf1ff;border:1px solid #dce7fc;border-radius:16px}
+.app-result-grid article>span{font-size:14px;display:block;margin-bottom:9px}
+.app-result-grid strong{display:block;font-size:26px;letter-spacing:-.5px}
+.app-result-grid small{display:block;font-size:13px;font-weight:500;letter-spacing:0;margin-top:4px}
+.app-result-note{display:flex;align-items:center;gap:12px;text-align:left;color:#36622e;background:#edf7ed;padding:14px;border-radius:14px;margin:0 0 12px}
+.app-result-note svg{flex-shrink:0}
+.app-result-note p{font-size:15px;line-height:1.5;margin:0}
+.app-project-filters{display:flex;gap:9px;flex-wrap:wrap;margin:20px 0}
+.app-project-filters button{background:#f1f5ff;border:1px solid #dce7fa;color:#13365f;padding:10px 16px;min-height:44px;border-radius:24px;font:inherit;font-size:14px;font-weight:650;cursor:pointer}
+.app-project-filters button[aria-pressed=true]{background:#123c69;color:white;border-color:#123c69}
+.app-project-gallery[data-filter=Residential] .sp-card:not([data-property=Residential]),.app-project-gallery[data-filter=Commercial] .sp-card:not([data-property=Commercial]),.app-project-gallery[data-filter=Industrial] .sp-card:not([data-property=Industrial]),.app-project-gallery:not([data-filter=All]) .sp-next{display:none}
+:is(.app-page,.mobile-home-panel,.solar-mobile-nav,.app-project-gallery) :is(a,button,input,summary):focus-visible{outline:3px solid #df8b00;outline-offset:3px}
+
+@media(max-width:700px){
+  body{background:#f5f8ff}
+  body .samerika-home{--sh-navy:#102b58;background:#f5f8ff;color:#102b58;padding-bottom:calc(92px + env(safe-area-inset-bottom));min-height:100dvh}
+  body .samerika-home .sh-header{position:sticky;top:0;z-index:60;display:grid;grid-template-columns:44px 1fr 44px;align-items:center;gap:12px;height:76px;min-height:76px;padding:10px 16px;background:#f9fbfff2;border-bottom:1px solid #e6edf9;box-shadow:none;backdrop-filter:blur(18px)}
+  body .sh-header>.brand.brand-link{grid-column:2;grid-row:1;justify-self:center;width:172px;max-width:100%;margin:0}
+  body .sh-header .brand-logo{width:100%;height:auto;max-height:46px}
+  body .sh-header>.sh-menu{grid-column:1;grid-row:1;display:grid;place-items:center;width:44px;height:44px;background:transparent;border:0;border-radius:12px;color:#102b58;margin:0;padding:0}
+  body .sh-header .sh-header-cta{display:none}
+  body .sh-header>.sh-mobile-notifications{grid-column:3;grid-row:1;display:grid;place-items:center;width:44px;height:44px;border-radius:12px;color:#102b58}
+  body .sh-header>.sh-navigation{display:none;position:absolute;top:100%;left:12px;right:12px;padding:12px;background:#fff;border:1px solid #dce7fa;border-radius:0 0 20px 20px;box-shadow:0 20px 30px #102b581c;max-height:calc(100dvh - 170px);overflow:auto}
+  body .sh-header>.sh-navigation.is-open{display:flex;flex-direction:column;gap:2px;align-items:stretch}
+  body .sh-header .sh-navigation a{font-size:16px;line-height:1.4;padding:12px 16px;min-height:46px;color:#102b58;margin:0;border-radius:10px}
+  body .sh-header .sh-navigation .sh-nav-login{background:#123c69;color:#fff;text-align:center;margin-top:8px}
+  body .sh-header .sh-mobile-nav-link{display:block}
+  body .sh-header .sh-desktop-nav-link{display:none}
+  body .samerika-homepage>section:not(.mobile-home-panel):not(.sh-answers),body .samerika-homepage>.sh-closing,body .samerika-homepage>.sh-mobile-cta{display:none}
+  body .samerika-homepage>.mobile-home-panel{display:block;padding:12px 16px 0;max-width:560px;margin:auto}
+  .mobile-solar-hero{position:relative;isolation:isolate;overflow:hidden;border-radius:20px;min-height:250px;background:#12629a}
+  .mobile-solar-hero>img{object-fit:cover;object-position:65% center;z-index:-2}
+  .mobile-solar-hero:before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,#07345af2,#06477fa8 48%,#00457000 85%);z-index:-1}
+  .mobile-solar-hero-copy{padding:24px 20px;color:white}
+  .mobile-solar-hero-copy>span{font-size:15px;line-height:1.35;font-weight:500;display:block}
+  body .mobile-solar-hero h1{font-size:34px;line-height:1.06;letter-spacing:-1px;color:white;font-weight:750;margin:15px 0 20px}
+  .mobile-solar-hero .app-button{font-size:14px;min-height:44px;padding:10px 15px;border-radius:12px}
+  .mobile-hero-note{position:absolute;bottom:9px;right:10px;color:white;background:#082b57b3;padding:3px 7px;border-radius:5px;font-size:11px}
+  .mobile-quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px 0 27px}
+  .mobile-quick-actions>a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:112px;padding:13px 12px;background:#fff;border:1px solid #dbe5fc;border-radius:17px;color:#102b58;text-decoration:none;box-shadow:0 4px 14px #123c6905}
+  .mobile-quick-actions>a>span{display:grid;place-items:center;width:42px;height:42px;background:#edf3ff;border-radius:14px}
+  .mobile-quick-actions strong{font-size:15px;line-height:1.25;font-weight:650;text-align:center;max-width:120px}
+  .mobile-section-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 13px}
+  .mobile-section-heading h2{font-size:20px;line-height:1.2;letter-spacing:-.6px;font-weight:750;margin:0;color:#102b58}
+  .mobile-section-heading>a{font-size:14px;color:#174b84;white-space:nowrap;min-height:44px;display:flex;align-items:center;font-weight:600}
+  .mobile-project-previews{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .mobile-project-previews>a{background:#fff;border:1px solid #e1e9fa;border-radius:16px;overflow:hidden;color:#102b58;padding-bottom:12px;text-decoration:none}
+  .mobile-project-previews>a>div{position:relative;aspect-ratio:1.35;overflow:hidden}
+  .mobile-project-previews img{object-fit:cover}
+  .mobile-project-previews span{display:block;font-size:15px;font-weight:700;padding:11px 10px 3px}
+  .mobile-project-previews small{display:block;font-size:13px;color:#526481;padding:0 10px}
+  .mobile-image-caption{font-size:12px;color:#61738c;margin:9px 2px 22px}
+  .mobile-service-list{display:grid;gap:10px}
+  .mobile-service-list>a{display:flex;align-items:center;gap:13px;background:white;border:1px solid #e1e9fa;border-radius:16px;padding:16px 12px;color:#102b58;text-decoration:none}
+  .mobile-service-list>a>span{width:42px;height:42px;flex-shrink:0;display:grid;place-items:center;background:#edf3ff;border-radius:13px}
+  .mobile-service-list strong{display:block;font-size:16px;line-height:1.35}
+  .mobile-service-list small{display:block;font-size:13px;color:#526481;margin-top:5px;line-height:1.45}
+  .mobile-green-card{display:flex;align-items:center;gap:18px;background:#eaf3e9;border-radius:20px;padding:22px;margin:24px 0;color:#365c31}
+  .mobile-green-card>svg{flex-shrink:0}
+  .mobile-green-card strong{font-size:21px;line-height:1.25;letter-spacing:-.4px}
+  .mobile-green-card a{display:block;font-size:15px;margin-top:12px;text-decoration:underline;text-underline-offset:4px;min-height:32px}
+  body .samerika-homepage>.sh-answers{padding:20px 16px 8px;max-width:560px;margin:auto;background:transparent}
+  body .sh-answers h2{font-size:27px;line-height:1.15}
+  body .sh-faq{background:white;border:1px solid #e1e9fa;border-radius:14px;margin:8px 0;padding:0 14px}
+  body .sh-faq>button{font-size:16px;min-height:58px}
+  body .global-site-footer{display:none}
+  body .solar-mobile-nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center;position:fixed;bottom:0;left:0;right:0;z-index:70;background:#fbfcfff5;border-top:1px solid #dce7fa;box-shadow:0 -6px 28px #17376309;padding:7px 6px calc(8px + env(safe-area-inset-bottom));backdrop-filter:blur(18px);border-radius:22px 22px 0 0}
+  .solar-mobile-nav>a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#425c80;text-decoration:none;min-height:55px;font-size:12px;font-weight:550;line-height:1.2}
+  .solar-mobile-nav>a>span:first-child{display:grid;place-items:center;width:44px;height:29px;border-radius:12px}
+  .solar-mobile-nav>a.is-current{color:#103b71;font-weight:750}
+  .solar-mobile-nav>a.is-current>span:first-child{background:#e4edff}
+  .app-page{padding:15px 16px 12px;max-width:560px}
+  .app-page-heading{margin-bottom:22px}
+  .app-page-heading h1{font-size:22px}
+  .app-page-heading>p{font-size:16px;max-width:290px;margin-top:8px}
+  .app-project-filters{flex-wrap:nowrap;overflow:auto;padding:4px 0 9px;margin:12px 0;scrollbar-width:thin}
+  .app-project-filters button{white-space:nowrap;flex-shrink:0;padding:9px 15px}
+  body .samerika-projects .sp-hero{min-height:0;background:transparent;display:block;padding:24px 16px 0}
+  body .samerika-projects .sp-hero>img,body .samerika-projects .sp-hero-shade,body .samerika-projects .sp-hero-content>nav,body .samerika-projects .sp-hero-content>.sp-label,body .samerika-projects .sp-image-note,body .samerika-projects .sp-actions{display:none}
+  body .samerika-projects .sp-hero-content{padding:0;text-align:center;color:#102b58}
+  body .samerika-projects .sp-hero h1{font-size:29px;line-height:1.15;color:#102b58;letter-spacing:-.8px;margin:0}
+  body .samerika-projects .sp-hero h1 em{color:#123c69;font-style:normal}
+  body .samerika-projects .sp-hero p{font-size:16px;line-height:1.5;color:#526481;margin:14px auto 0;max-width:340px}
+  body .samerika-projects .sp-section{padding:26px 16px;max-width:560px;margin:auto}
+  body .samerika-projects #project-types{padding-top:12px}
+  body .samerika-projects #project-types>.sp-section-heading{display:none}
+  body .samerika-projects .sp-gallery-note{font-size:12px;margin:12px 0;text-align:center;color:#61738c}
+  body .samerika-projects .sp-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  body .samerika-projects .sp-card{border:1px solid #dce7fa;border-radius:16px;box-shadow:none;background:white}
+  body .samerika-projects .sp-card-image{height:auto;aspect-ratio:1.2}
+  body .samerika-projects .sp-card-body{padding:13px 11px}
+  body .samerika-projects .sp-card-top,body .samerika-projects .sp-card-body>p,body .samerika-projects .sp-card ul{display:none}
+  body .samerika-projects .sp-card h3{font-size:17px;letter-spacing:-.4px;line-height:1.25;margin:0 0 10px;color:#102b58}
+  body .samerika-projects .sp-card-link{display:flex;align-items:center;min-height:44px;font-size:14px;line-height:1.35;color:#174b84;border-top:1px solid #e6edfa;padding-top:8px}
+  body .samerika-projects .sp-next{grid-column:1/-1;padding:24px;border-radius:18px;min-height:0;background:#edf3ff;color:#102b58}
+  body .samerika-projects .sp-next p{color:#526481}
+  body .samerika-projects .sp-next .sp-label{color:#865305}
+  body .samerika-projects .sp-next h3{font-size:25px;margin:10px 0}
+  body .samerika-projects .sp-next>svg{display:none}
+  body .samerika-projects :is(.sp-scope,.sp-tracking){border-top:1px solid #e1e9fa;background:transparent}
+  body .samerika-projects :is(.sp-scope,.sp-tracking) h2{font-size:28px}
+  body .samerika-projects .sp-cta{margin:12px 16px;border-radius:20px;padding:28px 20px}
+  body .samerika-projects .sp-cta h2{font-size:28px}
+  body .samerika-about .sa-hero{display:flex;flex-direction:column;padding:24px 16px;gap:22px;background:transparent}
+  body .samerika-about .sa-hero-copy{padding:0}
+  body .samerika-about .sa-breadcrumb{display:none}
+  body .samerika-about .sa-hero h1{font-size:33px;line-height:1.15;letter-spacing:-1px}
+  body .samerika-about .sa-hero-image{height:220px;min-height:220px;width:100%;border-radius:20px;overflow:hidden}
+  body .samerika-about .sa-section{padding:28px 18px;max-width:560px;margin:auto}
+  body .samerika-about h2{font-size:28px;line-height:1.2}
+  body .samerika-about .sa-purpose{gap:14px;background:transparent}
+  body .samerika-about .sa-purpose article{border:1px solid #dce7fa;background:white;border-radius:18px;padding:24px}
+  body .samerika-about .sa-invite{margin:16px;border-radius:20px;padding:30px 22px}
+  body .samerika-home .sh-button{border-radius:14px;min-height:48px;font-size:16px}
+  body .samerika-home .sh-primary{background:#ffac05;color:#102b58;border-color:#ffac05}
+  body .samerika-home .sh-dark{background:#123c69;color:white}
+  body .portal-choice{background:radial-gradient(ellipse at top,#e7f0ff,transparent 65%),#f7faff;padding:32px 18px;min-height:100dvh;color:#102b58}
+  body .portal-choice>.brand{width:210px;margin:0 auto 25px}
+  body .portal-choice .choice-heading h1{font-size:32px;line-height:1.15;letter-spacing:-1px;margin:12px 0}
+  body .portal-choice .choice-heading p{font-size:16px;color:#526481}
+  body .portal-choice .choice-grid{display:grid;grid-template-columns:1fr;gap:12px;margin:26px 0 20px;width:100%}
+  body .portal-choice .choice-card{padding:20px;border:1px solid #dce7fa;border-radius:18px;background:white;min-height:0;box-shadow:0 5px 20px #123c6904}
+  body .portal-choice .choice-card .entry-icon{float:left;width:42px;height:42px;margin:0 13px 12px 0;border-radius:14px;background:#edf3ff;color:#123c69}
+  body .portal-choice .choice-card>.eyebrow{font-size:11px;letter-spacing:.4px;display:block;color:#526481}
+  body .portal-choice .choice-card h2{font-size:20px;margin:7px 0 15px;color:#102b58}
+  body .portal-choice .choice-card p{font-size:16px;line-height:1.5;margin:0;clear:both;color:#526481}
+  body .portal-choice .choice-action{font-size:15px;color:#174b84;margin-top:14px}
+  body .portal-choice .choice-note{font-size:13px;color:#526481;line-height:1.5}
+  body .login-page{min-height:100dvh;background:radial-gradient(ellipse at top,#e7f0ff,transparent 65%),#f7faff;display:block;padding-bottom:env(safe-area-inset-bottom)}
+  body .login-page .login-story{display:none}
+  body .login-page .login-form-side{display:block;padding:20px 22px 40px;background:transparent;min-height:100dvh}
+  body .login-page .login-back{position:static;font-size:14px;min-height:44px;display:flex;align-items:center;color:#526481}
+  body .login-page .login-form-wrap{width:100%;max-width:420px;margin:24px auto 0}
+  body .login-page .mobile-login-brand{display:flex;flex-direction:column;align-items:center;gap:8px;margin:0 0 35px}
+  .mobile-login-brand .brand{width:230px;max-width:90%}
+  .mobile-login-brand>span{font-size:12px;color:#102b58}
+  body .login-page .login-form-wrap>.entry-icon{display:none}
+  body .login-page .login-form-wrap>.eyebrow{display:block;text-align:center;font-size:12px;color:#526481}
+  body .login-page .login-form-wrap>h2{text-align:center;font-size:30px;line-height:1.2;letter-spacing:-.8px;color:#102b58;margin:10px 0}
+  body .login-page .login-form-wrap>p{text-align:center;font-size:16px;line-height:1.5;color:#526481}
+  body .login-page form{margin-top:28px}
+  body .login-page form>label{font-size:14px;color:#102b58;margin-bottom:8px}
+  body .login-page input{background:white;border:1px solid #d8e4fa;border-radius:14px;min-height:54px;font-size:16px;color:#102b58;padding:14px}
+  body .login-page .password-input input{padding-right:50px}
+  body .login-page .login-submit{background:#123c69;border-color:#123c69;border-radius:28px;box-shadow:none;color:white;min-height:52px;font-size:16px;margin-top:24px}
+  body .login-page .login-access-note{font-size:13px;text-align:left;line-height:1.55;color:#526481}
+  body .login-page .login-included{border:1px solid #e1e9fa;background:white;border-radius:18px;padding:20px;margin-top:28px}
+  body .login-page .login-included>span{font-size:12px;color:#526481}
+  body .login-page .login-included p{font-size:14px;line-height:1.5;color:#244a7d}
+  body .quote-enquiry-sheet{background:#f8faff;border:1px solid #e1e9fa;border-radius:26px 26px 0 0;color:#102b58}
+  body .quote-enquiry-heading h1{font-size:29px;letter-spacing:-.8px;line-height:1.15;color:#102b58}
+  body .quote-enquiry-heading p{font-size:16px;color:#526481}
+  body .quote-enquiry-form input:not([type=checkbox]),body .quote-enquiry-form select{font-size:16px;min-height:54px;border-radius:14px;border-color:#d8e4fa;background:white;color:#102b58}
+  body .quote-enquiry-bills label{border-radius:14px;font-size:14px;min-height:54px;border-color:#d8e4fa}
+  body .quote-enquiry-submit{background:#ffac05;color:#102b58;border-radius:16px;min-height:52px;font-size:16px}
+  body .quote-enquiry-consent{font-size:14px;line-height:1.5;color:#526481}
+  body .workspace-main{background:#f5f8ff}
+  body .workspace-header{background:#fbfcfff5;border-bottom:1px solid #e1e9fa;box-shadow:none}
+  body .mobile-workspace-nav{background:#fbfcfff5;border-top:1px solid #dce7fa;border-radius:22px 22px 0 0;box-shadow:0 -6px 28px #17376309;backdrop-filter:blur(18px)}
+  body .mobile-workspace-nav button{color:#425c80;font-size:12px}
+  body .mobile-workspace-nav button.active{color:#103b71;background:#e4edff;border-radius:14px}
+  body .workspace :is(.stat,.panel,.overview-action,.overview-project){border-color:#dce7fa;border-radius:16px;box-shadow:0 4px 14px #123c6904}
+}
+
+@media(max-width:360px){
+  body .samerika-home .sh-header{padding-left:10px;padding-right:10px;gap:6px}
+  body .sh-header>.brand.brand-link{width:155px}
+  .mobile-section-heading h2{font-size:18px}
+  .mobile-project-previews span{font-size:14px}
+  .app-service-photo{flex-basis:80px;height:106px}
+  .app-service-card{gap:12px}
+  .app-service-card h2{font-size:17px}
+  .app-service-card p{font-size:15px}
+}

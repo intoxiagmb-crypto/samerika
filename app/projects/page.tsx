@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import {Wheat, Building2, Factory, GraduationCap, House, Leaf, Sun, ClipboardCheck, FileText, PanelsTopLeft} from 'lucide-react';
 import PublicHeader from '@/components/public-header';
+import ProjectGallery from '@/components/project-gallery';
 import '../home.css';
 import './projects.css';
 
@@ -33,9 +34,9 @@ export default function ProjectsPage() {
       </section>
 
       <section className="sp-section" id="project-types" aria-labelledby="types-title"><div className="sp-section-heading"><div><span className="sp-label">FIND YOUR STARTING POINT</span><h2 id="types-title">Solar for the spaces<br/><em>that matter to you.</em></h2></div><p>Explore the kinds of projects you can discuss with our team. The proposed system and scope are confirmed after reviewing your site.</p></div><p className="sp-gallery-note">Illustrative solar concepts for each project type.</p>
-        <div className="sp-grid">{categories.map(({title,label,icon: Icon,property,text,details,tone,image,alt})=><article className={`sp-card sp-${tone}`} id={`project-${tone}`} style={{scrollMarginTop: 110}} key={title}><div className="sp-card-image"><Image src={image} alt={alt} fill sizes="(max-width: 700px) 88vw, (max-width: 1050px) 44vw, 400px"/></div><div className="sp-card-body"><div className="sp-card-top"><span className="sp-icon"><Icon size={35} strokeWidth={1.5}/></span><span className="sp-label">{label}</span></div><h3>{title}</h3><p>{text}</p><ul>{details.map(detail=><li key={detail}><Leaf size={15}/>{detail}</li>)}</ul><Link href={`/enquiry?property=${property}`} scroll={false} className="sp-card-link">Plan a project like this</Link></div></article>)}
+        <ProjectGallery><div className="sp-grid">{categories.map(({title,label,icon: Icon,property,text,details,tone,image,alt})=><article className={`sp-card sp-${tone}`} data-property={property} id={`project-${tone}`} style={{scrollMarginTop: 110}} key={title}><div className="sp-card-image"><Image src={image} alt={alt} fill sizes="(max-width: 700px) 45vw, (max-width: 1050px) 44vw, 400px"/></div><div className="sp-card-body"><div className="sp-card-top"><span className="sp-icon"><Icon size={35} strokeWidth={1.5}/></span><span className="sp-label">{label}</span></div><h3>{title}</h3><p>{text}</p><ul>{details.map(detail=><li key={detail}><Leaf size={15}/>{detail}</li>)}</ul><Link href={`/enquiry?property=${property}`} scroll={false} className="sp-card-link">Plan a project like this</Link></div></article>)}
           <article className="sp-next"><Sun size={45} strokeWidth={1.3}/><span className="sp-label">YOUR SPACE COULD BE NEXT</span><h3>Have a different<br/>project in mind?</h3><p>Tell us about your location and electricity needs. We’ll help you find the right conversation to start.</p><Link href="/enquiry" scroll={false} className="sh-button sh-primary">Share your requirements</Link></article>
-        </div>
+        </div></ProjectGallery>
       </section>
 
       <section className="sp-scope sp-section" aria-labelledby="scope-title"><div><span className="sp-label">A CLEAR PLAN FROM THE START</span><h2 id="scope-title">What goes into<br/><em>your solar project.</em></h2></div><div className="sp-scope-items">{[

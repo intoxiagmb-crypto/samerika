@@ -12,9 +12,17 @@ export default function HomeBannerCarousel() {
   const [hidden, setHidden] = useState(false);
   const touch = useRef<{x:number;y:number} | null>(null);
   const pathname = usePathname();
-  const running = !hidden && pathname === '/';
+  const [compact, setCompact] = useState(false);
+  const running = !compact && !hidden && pathname === '/';
   const choose = (index:number) => setActive((index + 3) % 3);
 
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 700px)');
+    const update = () => setCompact(media.matches);
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
   useEffect(() => {
     const updateVisibility = () => setHidden(document.hidden);
     updateVisibility();
@@ -26,13 +34,13 @@ export default function HomeBannerCarousel() {
     return startBannerRotation(() => setActive(current => (current + 1) % 3));
   }, [running, active]);
 
-  return <section className="sh-banner-carousel" id="home-content" aria-label="Explore solar with Samerika" aria-roledescription="carousel"
+  return <section className="sh-banner-carousel" id="home-banners" aria-label="Explore solar with Samerika" aria-roledescription="carousel"
     onTouchStart={event => { const point = event.touches[0]; touch.current = {x:point.clientX,y:point.clientY}; }}
     onTouchCancel={() => { touch.current = null; }}
     onTouchEnd={event => { const start = touch.current; touch.current = null; if (!start) return; const point = event.changedTouches[0]; const dx = point.clientX - start.x; if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(point.clientY - start.y) * 1.5) choose(active + (dx < 0 ? 1 : -1)); }}>
     <div className="sh-banner-stage" aria-live={running ? 'off' : 'polite'}>
       <div className={`sh-hero sh-banner-slide ${active === 0 ? 'is-active' : ''}`} role="group" aria-roledescription="slide" aria-label="1 of 3: Your rooftop" aria-hidden={active !== 0} inert={active !== 0}>
-        <Image src="/images/samerika-rooftop-hero.webp" alt="Illustrative rooftop solar canopy over a sunlit Indian home terrace" fill sizes="(max-width: 700px) 1200px, 100vw" preload className="sh-hero-image"/>
+        <Image src="/images/samerika-rooftop-hero.webp" alt="Illustrative rooftop solar canopy over a sunlit Indian home terrace" fill sizes="(max-width: 700px) 94vw, 100vw" preload className="sh-hero-image"/>
         <div className="sh-hero-shade"/>
         <div className="sh-hero-content"><span className="sh-eyebrow"><span/> SOLAR POWER. EVERYDAY POSSIBILITIES.</span><h1 id="home-title">A brighter future.<br/>Starts on <span>your roof.</span></h1><p>Make your move to solar with a team that connects every step—from your first enquiry to installation.</p><div className="sh-hero-actions"><Link href="/enquiry" scroll={false} className="sh-button sh-primary">Get Free Solar Quote <ArrowRight size={19}/></Link><a href="#solutions" className="sh-hero-link">Explore our solutions <ArrowUpRight size={18}/></a></div><div className="sh-hero-promise"><ShieldCheck size={19}/><span>Your rooftop. Your requirements. A plan built around you.</span></div></div>
         <div className="sh-hero-bottom"><span><ClipboardCheck size={19}/> Site-led planning</span><span><FileText size={19}/> Clear quotations</span><span><CheckCircle2 size={19}/> Connected project tracking</span></div>

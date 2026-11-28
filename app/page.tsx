@@ -2,6 +2,7 @@ import HomeFaqs from '@/components/home-faqs';
 import HomeEnquiryPopup from '@/components/home-enquiry-popup';
 import HomeBannerCarousel from '@/components/home-banner-carousel';
 import PublicHeader from '@/components/public-header';
+import MobileHome from '@/components/mobile-home';
 import Image from 'next/image';
 import Link from 'next/link';
 import SolarPlanner from '@/components/solar-planner';
@@ -41,9 +42,10 @@ const faqs = [
 ];
 
 export default function HomePage() {
-  return <main className="samerika-home">
+  return <main className="samerika-home samerika-homepage" id="home-content">
     <a className="sh-skip" href="#home-content">Skip to content</a>
     <PublicHeader/><HomeEnquiryPopup/>
+    <MobileHome/>
 
     <HomeBannerCarousel/>
 
