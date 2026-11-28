@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, ArrowUpRight, CheckCircle2, ClipboardCheck, FileText, Leaf, ShieldCheck, Sun } from 'lucide-react';
 import { startBannerRotation } from '@/lib/home-banner-rotation.mjs';
+import { useAndroidApp } from '@/hooks/use-android-app';
 
 export default function HomeBannerCarousel() {
   const [active, setActive] = useState(0);
@@ -13,7 +14,8 @@ export default function HomeBannerCarousel() {
   const touch = useRef<{x:number;y:number} | null>(null);
   const pathname = usePathname();
   const [compact, setCompact] = useState(false);
-  const running = !compact && !hidden && pathname === '/';
+  const androidApp = useAndroidApp();
+  const running = !(androidApp && compact) && !hidden && pathname === '/';
   const choose = (index:number) => setActive((index + 3) % 3);
 
   useEffect(() => {

@@ -21,11 +21,13 @@ export default function PublicHeader({about = false, projects = false, programs 
       <Link href="/about" aria-current={about ? 'page' : undefined}>About Us</Link>
       <Link href="/projects" aria-current={projects ? 'page' : undefined}>Projects</Link>
       <Link href="/programs" aria-current={programs ? 'page' : undefined}>Programs</Link>
-      <Link href="/services">Our services</Link>
+      <a href={`${home}#solutions`} className="sh-web-only">Our offerings</a>
+      <Link href="/services" className="sh-mobile-nav-link">Our services</Link>
       <Link href="/calculator" className="sh-mobile-nav-link">Solar calculator</Link>
       <Link href="/contact" className="sh-mobile-nav-link">Contact & support</Link>
       {!about && !projects && !programs && <a href={`${home}#why-samerika`} className="sh-desktop-nav-link">Why Samerika</a>}
-      <Link href="/about#approach-title">How it works</Link>
+      <a href={`${home}#how-it-works`} className="sh-web-only">How it works</a>
+      <Link href="/about#approach-title" className="sh-mobile-nav-link">How it works</Link>
       <a href={`${home}#faqs`}>FAQs</a>
       <Link href="/login" className="sh-nav-login">Sign in</Link>
     </nav>
