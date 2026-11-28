@@ -10,7 +10,8 @@ import SolarLandscape from './solar-landscape';
 type Row = Record<string, any>;
 type Data = { user: Row; leads: Row[]; projects: Row[]; records: Row[]; notifications: Row[] };
 type Props = { data: Data; onNavigate: (view: string) => void; onCreate: () => void; onDetail: (row: Row, type: string) => void };
-const money = (amount: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount / 100);
+const moneyFormatter = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
+const money = (amount: number) => moneyFormatter.format(amount / 100);
 const dayLabel = (day: string) => new Date(day + 'T12:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 const todayKey = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 

@@ -1,6 +1,4 @@
-'use client';
-
-import { useState } from 'react';
+import HomeFaqs from '@/components/home-faqs';
 import HomeEnquiryPopup from '@/components/home-enquiry-popup';
 import HomeBannerCarousel from '@/components/home-banner-carousel';
 import PublicHeader from '@/components/public-header';
@@ -8,7 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import SolarPlanner from '@/components/solar-planner';
 import SolarHomesCounter from '@/components/solar-homes-counter';
-import { ArrowRight, ArrowUpRight, Building2, Check, ClipboardCheck, FileText, House, Leaf, MessageCircle, Minus, PanelsTopLeft, Plus, ShieldCheck, Sun, Users, Headphones } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Building2, Check, ClipboardCheck, FileText, House, Leaf, MessageCircle, PanelsTopLeft, ShieldCheck, Sun, Users, Headphones } from 'lucide-react';
 import './home.css';
 import './home-subsidy.css';
 import './home-highlights.css';
@@ -43,7 +41,6 @@ const faqs = [
 ];
 
 export default function HomePage() {
-  const [faq, setFaq] = useState<number | null>(0);
   return <main className="samerika-home">
     <a className="sh-skip" href="#home-content">Skip to content</a>
     <PublicHeader/><HomeEnquiryPopup/>
@@ -169,10 +166,7 @@ export default function HomePage() {
       <div className="sh-answers-intro"><span className="sh-eyebrow">GOOD QUESTIONS. CLEAR ANSWERS.</span><h2 id="answers-heading">A little clarity.<br/><em>A confident start.</em></h2><p>From your first enquiry to following your project, here’s what helps to know.</p>
         <div className="sh-answers-help"><span className="sh-answers-help-icon"><MessageCircle size={24} strokeWidth={1.7}/></span><h3>Have something else in mind?</h3><p>Tell us about your rooftop and your questions. Our company staff will follow up.</p><Link href="/enquiry" scroll={false}>Talk to our solar team <ArrowRight size={17}/></Link><span className="sh-answers-help-note"><ShieldCheck size={14}/> No account needed to enquire.</span></div>
       </div>
-      <div className="sh-answers-list" aria-label="Frequently asked questions">{faqs.map(([question,answer],index)=><article key={question} className={`sh-answer ${faq===index?'is-open':''}`}>
-        <h3><button type="button" aria-expanded={faq===index} aria-controls={`home-faq-${index}`} id={`home-faq-button-${index}`} onClick={()=>setFaq(faq===index?null:index)}><span className="sh-answer-number" aria-hidden="true">0{index+1}</span><span className="sh-answer-question">{question}</span><span className="sh-answer-toggle" aria-hidden="true">{faq===index?<Minus size={17}/>:<Plus size={17}/>}</span></button></h3>
-        <div className="sh-answer-content" id={`home-faq-${index}`} role="region" aria-labelledby={`home-faq-button-${index}`} hidden={faq!==index}><p>{answer}</p></div>
-      </article>)}<p className="sh-answers-signoff"><Sun size={15}/> A clearer next step starts with the right information.</p></div>
+      <HomeFaqs items={faqs}/>
     </section>
 
     <div className="sh-closing" id="get-in-touch">

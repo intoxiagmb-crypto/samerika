@@ -4,12 +4,12 @@ import { readLimitedBody } from '@/lib/request-body';
 import { getDatabase } from '@/lib/database.mjs';
 import { createStorage } from '@/lib/storage.mjs';
 export const runtime = 'nodejs';
-import { getPortalIdentity } from '@/lib/portal-auth';
+import { getPortalUser } from '@/lib/portal-auth';
 import { Business, errorResponse } from '@/lib/business.mjs';
 export const dynamic='force-dynamic';
 export async function GET(req:Request){try{
- const identity=await getPortalIdentity();if(!identity)return Response.json({error:'Sign in to continue.'},{status:401});
- const s=new Business(getDatabase()),u=await s.user(identity),url=new URL(req.url);
+ const u=await getPortalUser();if(!u)return Response.json({error:'Sign in to continue.'},{status:401});
+ const s=new Business(getDatabase()),url=new URL(req.url);
  const r=await s.fileAccess(u,url.searchParams.get('id'));
  const file=await createStorage().get(r.data.fileKey);if(!file)return Response.json({error:'File not found.'},{status:404});
  const preview=url.searchParams.get('preview')==='1'&&['application/pdf','image/jpeg','image/png'].includes(r.data.mime);
@@ -18,7 +18,7 @@ export async function GET(req:Request){try{
 export async function POST(req:Request){try{
  if(!isSameOrigin(req))return Response.json({error:'Request origin is not permitted.'},{status:403});
  if(Number(req.headers.get('content-length'))>MAX_UPLOAD_REQUEST_BYTES)return Response.json({error:'Maximum file size is 2 MB.'},{status:413});
- const identity=await getPortalIdentity();if(!identity)return Response.json({error:'Sign in to continue.'},{status:401});const s=new Business(getDatabase());const u=await s.user(identity);const storage=createStorage();await s.limit(u.id);
+ const u=await getPortalUser();if(!u)return Response.json({error:'Sign in to continue.'},{status:401});const s=new Business(getDatabase());const storage=createStorage();await s.limit(u.id);
  const bytesBody=await readLimitedBody(req,MAX_UPLOAD_REQUEST_BYTES);const boundedRequest=new Request(req.url,{method:'POST',headers:req.headers,body:bytesBody as BodyInit});const form=await boundedRequest.formData();const file=form.get('file');const projectId=String(form.get('projectId')||'');if(projectId)await s.access(u,projectId);else if(form.get('documentType')!=='Partner KYC'||u.role!=='PARTNER')return Response.json({error:'Select an authorized project.'},{status:403});
  if(!(file instanceof File)||file.size===0||file.size>MAX_UPLOAD_BYTES)return Response.json({error:'Choose a PDF, JPEG or PNG up to 2 MB.'},{status:400});
  const bytes=new Uint8Array(await file.arrayBuffer());const hex=[...bytes.slice(0,8)].map(b=>b.toString(16).padStart(2,'0')).join('');

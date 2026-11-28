@@ -69,6 +69,17 @@ Passwords use salted scrypt hashes. Sessions use hashed random tokens, HttpOnly 
 
 ## Verification
 
+### Request performance
+
+- Workspace loading batches its five to seven independent SELECTs into one read transaction through the libSQL adapter. Business and file endpoints reuse the session's authenticated user instead of fetching the same user again. Session/role checks still run on every request; private responses are not cached across users.
+- Project progress groups records by project once, and project/lead membership uses a Set instead of scanning every lead for every project.
+- Login, account creation and password reset use asynchronous scrypt with the existing salt, key length and work factors. This frees the Node event loop during hashing without changing stored passwords or reducing password security. Login and business rate-limit increments return their count from the same SQL statement.
+- Public enquiries read all applicable rate-limit counters in one SELECT. Project notifications query only recipient IDs, with project/lead details joined in one query. Opening notifications updates their read state locally after the server confirms it instead of downloading the whole workspace again.
+- Shared quotation page/PDF reads join the quotation and project, retaining expiry, publication and deleted-project checks. PDF and dashboard currency formatting reuse formatter instances.
+- The public homepage is a Server Component with a small interactive FAQ component. The quotation builder loads on demand, and font origins have early connection hints.
+
+These changes require no database migration. No tests, build verification or performance benchmarks were run for this performance change, as requested. The reduction in database calls is from code inspection, not measured latency. Successful website deployment makes these changes available in the existing Android APK; no APK reinstall is required for these server/web changes.
+
 ```sh
 npm test
 npm run build
