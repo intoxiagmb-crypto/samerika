@@ -24,7 +24,7 @@ export default function EnquiryForm({ initialProperty = 'Residential', initialRe
       requestAnimationFrame(() => errorMessage.current?.focus());
     } finally { submitting.current = false; setBusy(false); }
   }
-  if (sent) return <div className="quote-enquiry-success" role="status"><CheckCircle2 size={48}/><h2 ref={successHeading} tabIndex={-1}>Thank you!</h2><p>Your enquiry is with our solar team. We’ll contact you using the number you provided.</p><button type="button" className="quote-enquiry-submit" onClick={onDone}>Done</button></div>;
+  if (sent) return <div className="quote-enquiry-success" role="status"><CheckCircle2 size={48}/><h2 ref={successHeading} tabIndex={-1}>Thank you for choosing Sabrika Power.</h2><p>Your inquiry has been received successfully. Our team will contact you soon.</p><p>Let&apos;s create a brighter, greenery future together.</p><button type="button" className="quote-enquiry-submit" onClick={onDone}>Done</button></div>;
   return <form onSubmit={submit} aria-busy={busy} className="quote-enquiry-form">
     <fieldset disabled={busy} className="quote-enquiry-fields">
       <label className="quote-enquiry-input"><span className="quote-enquiry-sr">Full name</span><input name="name" autoComplete="name" required maxLength={120} placeholder="Full Name"/></label>
